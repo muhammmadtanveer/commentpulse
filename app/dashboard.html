@@ -64,12 +64,12 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
       <div class="nav-item" data-nav="topics"><i data-lucide="tags" class="w-5 h-5"></i><span class="nav-label">Topics</span></div>
       <div class="nav-item" data-nav="predictions"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="nav-label">Predictions</span></div>
       <div class="nav-item" data-nav="comments"><i data-lucide="message-square-text" class="w-5 h-5"></i><span class="nav-label">Comments</span></div>
-      <div class="nav-item" data-nav="settings"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-label">Import &amp; Settings</span></div>
+      <div class="nav-item" data-nav="datasource"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-label">Import &amp; Settings</span></div>
       <div class="nav-item" data-nav="help"><i data-lucide="circle-help" class="w-5 h-5"></i><span class="nav-label">Help</span></div>
     </nav>
     <div class="p-3 border-t border-zinc-100">
-      <div class="side-foot rounded-lg bg-indigo-50 text-indigo-900 text-[12px] leading-snug px-3 py-2.5 mb-2">
-        <strong>Demo Mode</strong><br>Sample data: Paws &amp; Shine Grooming (fictional). Connect Meta for live data.
+      <div class="side-foot rounded-lg bg-indigo-50 text-indigo-900 text-[12px] leading-snug px-3 py-2.5 mb-2" id="side-note">
+        <strong>Demo Mode</strong><br>Sample data: Paws &amp; Shine Grooming (fictional). Add your own data above the KPIs.
       </div>
       <button id="collapse-btn" class="nav-item w-full"><i data-lucide="panel-left-close" class="w-5 h-5"></i><span class="nav-label">Collapse</span></button>
     </div>
@@ -109,8 +109,8 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
           <button id="profile-btn" class="flex items-center gap-2.5 h-10 pl-1 pr-2 rounded-lg hover:bg-zinc-50 transition">
             <span class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[13px] font-bold">PS</span>
             <span class="hidden sm:block text-left leading-tight">
-              <span class="block text-[13px] font-semibold">Paws &amp; Shine</span>
-              <span class="block text-[11px] text-zinc-500">Sample business · Demo</span>
+              <span class="block text-[13px] font-semibold" id="dataset-name">Paws &amp; Shine</span>
+              <span class="block text-[11px] text-zinc-500" id="dataset-sub">Sample business · Demo</span>
             </span>
             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400"></i>
           </button>
@@ -118,9 +118,9 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             <div class="px-2 py-1.5 text-zinc-500 text-[12px]">Signed in for analysis of</div>
             <div class="px-2 pb-1.5 font-semibold">Paws &amp; Shine Grooming</div>
             <div class="border-t border-zinc-100 my-1"></div>
-            <a class="nav-item" href="/report/demo" target="_blank" rel="noopener"><i data-lucide="file-text" class="w-4 h-4"></i><span>Printable report</span></a>
-            <a class="nav-item" href="/api/demo/whatsapp" target="_blank" rel="noopener"><i data-lucide="message-circle" class="w-4 h-4"></i><span>WhatsApp summary</span></a>
-            <div class="nav-item" data-nav="settings"><i data-lucide="upload" class="w-4 h-4"></i><span>Import my own comments</span></div>
+            <a class="nav-item" href="/report/demo" target="_blank" rel="noopener"><i data-lucide="file-text" class="w-4 h-4"></i><span>Printable report (demo)</span></a>
+            <a class="nav-item" href="/api/demo/whatsapp" target="_blank" rel="noopener"><i data-lucide="message-circle" class="w-4 h-4"></i><span>WhatsApp summary (demo)</span></a>
+            <div class="nav-item" data-nav="datasource"><i data-lucide="upload" class="w-4 h-4"></i><span>Import my own comments</span></div>
           </div>
         </div>
       </div>
@@ -139,6 +139,65 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
       </div>
 
       <div id="app" class="hidden space-y-5">
+
+        <!-- Data source hub -->
+        <section id="datasource" class="card p-5 sm:p-6 scroll-mt-24 border-indigo-100" style="background:linear-gradient(180deg,#eef2ff 0%,#ffffff 78%)">
+          <div class="flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <h2 class="text-[17px] font-extrabold flex items-center gap-2"><i data-lucide="database-zap" class="w-5 h-5 text-accent"></i> Use your own comments</h2>
+              <p class="text-[13px] text-zinc-600 mt-1">You are viewing: <strong id="dataset-badge">Demo data — Paws &amp; Shine Grooming (fictional)</strong>. Bring your own data three ways — it never leaves this server except Meta fetching, and your last analysis is saved in this browser only.</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button id="btn-export" class="h-9 px-3.5 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold hover:bg-zinc-50 transition flex items-center gap-1.5"><i data-lucide="file-down" class="w-4 h-4"></i> Export report</button>
+              <button id="btn-whatsapp" class="h-9 px-3.5 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold hover:bg-zinc-50 transition flex items-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i> Copy WhatsApp summary</button>
+              <button id="btn-reset" class="h-9 px-3.5 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold hover:bg-zinc-50 transition flex items-center gap-1.5"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Back to demo</button>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-4 flex-wrap" role="tablist">
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold bg-accent text-white transition" data-tab="paste">Paste comments</button>
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="csv">Upload CSV</button>
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="meta">Facebook / Instagram</button>
+          </div>
+
+          <div id="ds-panel-paste" class="ds-panel mt-4">
+            <textarea id="ds-paste-text" rows="5" placeholder="Paste comments here — one comment per line. Copy them from your Facebook Page, Instagram post, or any export."
+              class="w-full rounded-lg border border-zinc-300 p-3 text-sm bg-white transition"></textarea>
+            <div class="flex items-center gap-3 mt-2.5 flex-wrap">
+              <select id="ds-paste-platform" class="h-10 rounded-lg border border-zinc-300 bg-white text-sm px-2">
+                <option value="facebook">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="other">Other</option>
+              </select>
+              <button id="ds-paste-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Analyse pasted comments</button>
+              <span id="ds-paste-status" class="text-[13px] text-zinc-500"></span>
+            </div>
+          </div>
+
+          <div id="ds-panel-csv" class="ds-panel mt-4 hidden">
+            <p class="text-[13px] text-zinc-600">CSV with a <code class="bg-zinc-100 px-1.5 py-0.5 rounded text-[12.5px]">text</code> column (plus optional <code class="bg-zinc-100 px-1.5 py-0.5 rounded text-[12.5px]">timestamp, platform, author</code>). Max 5 MB / 5,000 comments. <a href="/api/sample-csv" class="text-accent font-semibold underline">Download the sample CSV</a> to see the exact format.</p>
+            <div class="flex items-center gap-3 mt-2.5 flex-wrap">
+              <input id="ds-csv-file" type="file" accept=".csv" class="text-sm">
+              <button id="ds-csv-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Analyse CSV</button>
+              <span id="ds-csv-status" class="text-[13px] text-zinc-500"></span>
+            </div>
+          </div>
+
+          <div id="ds-panel-meta" class="ds-panel mt-4 hidden">
+            <p class="text-[13px] text-zinc-600 leading-relaxed">Fetch comments straight from a post you own. You need a Meta access token with comment-read permission (from Meta Graph API Explorer) and the post / media ID. Your token is used for this one fetch and is <strong>never stored</strong>. One-click "Connect with Facebook" login arrives once the Meta app review is done — this token route works today.</p>
+            <div class="grid sm:grid-cols-4 gap-2.5 mt-3">
+              <select id="ds-meta-platform" class="h-10 rounded-lg border border-zinc-300 bg-white text-sm px-2">
+                <option value="facebook">Facebook post</option>
+                <option value="instagram">Instagram media</option>
+              </select>
+              <input id="ds-meta-id" type="text" placeholder="Post / media ID" class="h-10 rounded-lg border border-zinc-300 bg-white text-sm px-3">
+              <input id="ds-meta-token" type="password" placeholder="Meta access token" class="h-10 rounded-lg border border-zinc-300 bg-white text-sm px-3 sm:col-span-2">
+            </div>
+            <div class="flex items-center gap-3 mt-2.5 flex-wrap">
+              <button id="ds-meta-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Fetch &amp; analyse</button>
+              <span id="ds-meta-status" class="text-[13px] text-zinc-500"></span>
+            </div>
+          </div>
+        </section>
 
         <!-- KPI cards -->
         <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -250,16 +309,10 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
           </div>
         </section>
 
-        <!-- Import & Settings -->
+        <!-- Settings -->
         <section id="settings" class="card p-5 sm:p-6 scroll-mt-24">
-          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 text-accent"></i> Import &amp; Settings</h2>
-          <p class="text-[13.5px] text-zinc-600 mt-2 leading-relaxed">Analyse your own comments: upload a CSV with columns <code class="bg-zinc-100 px-1.5 py-0.5 rounded text-[12.5px]">text,timestamp,platform,author</code> — the whole dashboard re-renders with your data. Nothing is uploaded anywhere except this server.</p>
-          <div class="flex items-center gap-3 mt-3 flex-wrap">
-            <input id="csv-file" type="file" accept=".csv" class="text-sm">
-            <button id="csv-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Analyse CSV</button>
-            <span id="csv-status" class="text-[13px] text-zinc-500"></span>
-          </div>
-          <div class="border-t border-zinc-100 mt-5 pt-4 grid sm:grid-cols-2 gap-4 text-[13.5px]">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 text-accent"></i> Settings &amp; status</h2>
+          <div class="mt-3 grid sm:grid-cols-2 gap-4 text-[13.5px]">
             <div>
               <div class="font-semibold mb-1">Meta (Facebook / Instagram) live data</div>
               <p class="text-zinc-600" id="meta-status">Checking…</p>
@@ -413,6 +466,56 @@ function renderBell(){
   document.getElementById("bell-dot").classList.toggle("hidden", !(p.rising_topics||[]).length && A.sentiment.negative.pct < 10);
 }
 
+/* ---------- dataset identity + persistence ---------- */
+let CP_LABEL = "Demo data — Paws & Shine Grooming (fictional)";
+function applyDatasetLabel(){
+  const isDemo = CP_LABEL.indexOf("Demo data") === 0;
+  document.getElementById("dataset-badge").textContent = CP_LABEL;
+  document.getElementById("dataset-name").textContent = isDemo ? "Paws & Shine" : "My data";
+  document.getElementById("dataset-sub").textContent = isDemo ? "Sample business · Demo" : CP_LABEL;
+  document.getElementById("side-note").innerHTML = isDemo
+    ? "<strong>Demo Mode</strong><br>Sample data: Paws &amp; Shine Grooming (fictional). Add your own data above the KPIs."
+    : "<strong>Your data</strong><br>" + esc(CP_LABEL) + "<br>Saved in this browser only.";
+}
+function persist(){
+  try { localStorage.setItem("cp_last", JSON.stringify({ a: A, label: CP_LABEL })); } catch(e) {}
+}
+
+/* ---------- export: report + WhatsApp for the CURRENT analysis ---------- */
+function buildWhatsAppText(a){
+  const lines = ["*CommentPulse — comment summary*", "", a.gist.headline, "", "Top topics:"];
+  a.topics.slice(0,3).forEach(t => lines.push("- " + t.label + ": " + t.count + " comments (" + t.share_pct + "%)"));
+  if (a.overlap.length){
+    const o = a.overlap[0];
+    lines.push("", "Most repeated question (" + o.count + "x, " + o.theme + "):", '"' + o.representative + '"');
+  }
+  const rising = (a.predictions.rising_topics || []);
+  if (rising.length) lines.push("", "Rising (ESTIMATE): " + rising.slice(0,3).map(r => r.topic + " (+" + r.change_points + " pts)").join(", "));
+  return lines.join("\n");
+}
+function buildReportHtml(a){
+  const m = a.meta, s = a.sentiment;
+  const topics = a.topics.map(t =>
+    '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:14px"><strong>' + esc(t.label) + '</strong><span>' + t.count + ' comments · ' + t.share_pct + '%</span></div>' +
+    '<div style="height:10px;background:#e4e4e7;border-radius:5px;overflow:hidden;margin:4px 0"><div style="height:100%;width:' + t.share_pct + '%;background:#4f46e5"></div></div>' +
+    '<div style="color:#52525b;font-size:12.5px">Top terms: ' + esc(t.top_terms.join(", ")) + ' · ' + t.sentiment.positive.pct + '% positive / ' + t.sentiment.negative.pct + '% negative</div>' +
+    t.examples.map(e => '<p style="font-style:italic;color:#3f3f46;font-size:13px;margin:2px 0 0 10px">“' + esc(e) + '”</p>').join("") + '</div>').join("");
+  const overlap = a.overlap.length ? '<ul>' + a.overlap.map(o => '<li><strong>' + esc(o.theme) + '</strong> — ' + o.count + ' comments (' + o.share_pct + '%)<br><span style="font-style:italic;color:#3f3f46">“' + esc(o.representative) + '”</span></li>').join("") + '</ul>' : '<p>No repeated themes found.</p>';
+  const bullets = a.gist.bullets.map(b => '<li>' + esc(b) + '</li>').join("");
+  const preds = [];
+  (a.predictions.rising_topics || []).forEach(r => preds.push('<li>Rising (ESTIMATE): ' + esc(r.topic) + ' +' + r.change_points + ' pts</li>'));
+  (a.predictions.likely_questions || []).forEach(q => preds.push('<li>Likely question (ESTIMATE): ' + esc(q.question_theme) + ' — asked ' + q.times_asked + ' times</li>'));
+  (a.predictions.content_ideas || []).forEach(c => preds.push('<li>Content idea (ESTIMATE): ' + esc(c.idea) + '</li>'));
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>CommentPulse Report</title><style>body{font-family:Georgia,serif;color:#18181b;max-width:820px;margin:32px auto;padding:0 20px;line-height:1.55}h1{font-size:26px;margin-bottom:2px}h2{font-size:19px;margin-top:26px;border-bottom:2px solid #4f46e5;padding-bottom:4px}.sub{color:#52525b}li{margin-bottom:7px}</style></head><body>' +
+    '<h1>CommentPulse Report</h1><p class="sub">' + esc(CP_LABEL) + '</p>' +
+    '<p><strong>' + m.total_comments + '</strong> comments · <strong>' + a.topics.length + '</strong> topics · avg sentiment <strong>' + m.avg_sentiment + '</strong> · Positive ' + s.positive.pct + '% / Neutral ' + s.neutral.pct + '% / Negative ' + s.negative.pct + '%</p>' +
+    '<h2>Lub-e-lubab — the gist</h2><p><strong>' + esc(a.gist.headline) + '</strong></p><ul>' + bullets + '</ul>' +
+    '<h2>Topics discussed</h2>' + topics +
+    '<h2>Overlap — what keeps repeating</h2>' + overlap +
+    '<h2>Predictions</h2>' + (preds.length ? '<ul>' + preds.join("") + '</ul>' : '<p>Not enough data for predictions.</p>') +
+    '<p class="sub">Method: ' + esc(m.method) + '. All figures are computed from the comments analysed; predictions are estimates.</p></body></html>';
+}
+
 /* ---------- full render ---------- */
 function trendHtml(diffPct, invert){
   if (diffPct === null || diffPct === undefined) return '<span class="text-zinc-400">not enough dated data</span>';
@@ -424,10 +527,13 @@ function trendHtml(diffPct, invert){
     (diffPct>0?"+":"")+(Math.round(diffPct*10)/10)+'%</span> <span class="text-zinc-500">vs previous half of the period</span>';
 }
 
-function render(a){
+function render(a, label){
   A = a;
+  if (label) CP_LABEL = label;
   document.getElementById("loading").style.display = "none";
   document.getElementById("app").classList.remove("hidden");
+  applyDatasetLabel();
+  persist();
 
   /* KPIs */
   const repCount = a.overlap.reduce((s,o)=>s+o.count,0);
@@ -548,20 +654,88 @@ document.addEventListener("click", () => document.querySelectorAll(".dropdown").
 document.getElementById("global-search").addEventListener("input", () => { if (A) refreshDataViews(); });
 document.getElementById("range-picker").addEventListener("change", () => { if (A) refreshDataViews(); });
 
-document.getElementById("csv-btn").addEventListener("click", async () => {
-  const f = document.getElementById("csv-file").files[0];
-  const st = document.getElementById("csv-status");
+/* ---------- data-source hub ---------- */
+document.querySelectorAll(".ds-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".ds-tab").forEach(b => {
+      const on = b === btn;
+      b.classList.toggle("bg-accent", on); b.classList.toggle("text-white", on);
+      b.classList.toggle("border", !on); b.classList.toggle("border-zinc-300", !on); b.classList.toggle("bg-white", !on);
+    });
+    document.querySelectorAll(".ds-panel").forEach(p => p.classList.toggle("hidden", p.id !== "ds-panel-" + btn.dataset.tab));
+  });
+});
+async function readJsonOrError(r){
+  let body = null;
+  try { body = await r.json(); } catch(e) {}
+  if (!r.ok) throw new Error((body && body.error) ? body.error : ("server returned " + r.status));
+  return body;
+}
+function afterImport(st, label){
+  st.textContent = "Done — " + A.meta.total_comments + " comments analysed.";
+  document.getElementById("datasource").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.getElementById("ds-paste-btn").addEventListener("click", async () => {
+  const st = document.getElementById("ds-paste-status");
+  const lines = document.getElementById("ds-paste-text").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!lines.length) { st.textContent = "Paste at least one comment first."; return; }
+  st.textContent = "Analysing " + lines.length + " comments…";
+  try {
+    const platform = document.getElementById("ds-paste-platform").value;
+    const r = await fetch("/api/import/text", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments: lines.map(text => ({ text: text, platform: platform })) }) });
+    const a = await readJsonOrError(r);
+    render(a, "Your pasted comments (" + lines.length + ")");
+    afterImport(st);
+  } catch (err) { st.textContent = err.message; }
+});
+document.getElementById("ds-csv-btn").addEventListener("click", async () => {
+  const st = document.getElementById("ds-csv-status");
+  const f = document.getElementById("ds-csv-file").files[0];
   if (!f) { st.textContent = "Choose a CSV file first."; return; }
   st.textContent = "Analysing…";
   try {
     const fd = new FormData(); fd.append("file", f);
     const r = await fetch("/api/import/csv", { method: "POST", body: fd });
-    if (!r.ok) throw new Error("server returned " + r.status);
-    const a = await r.json();
-    render(a);
-    st.textContent = "Done — dashboard now shows your CSV (" + a.meta.total_comments + " comments).";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  } catch (err) { st.textContent = "Import failed: " + err.message; }
+    const a = await readJsonOrError(r);
+    render(a, "Your CSV — " + f.name);
+    afterImport(st);
+  } catch (err) { st.textContent = err.message; }
+});
+document.getElementById("ds-meta-btn").addEventListener("click", async () => {
+  const st = document.getElementById("ds-meta-status");
+  const platform = document.getElementById("ds-meta-platform").value;
+  const objectId = document.getElementById("ds-meta-id").value.trim();
+  const token = document.getElementById("ds-meta-token").value.trim();
+  if (!objectId) { st.textContent = "Enter the post / media ID first."; return; }
+  st.textContent = "Fetching from Meta…";
+  try {
+    const r = await fetch("/api/meta/fetch", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform: platform, object_id: objectId, access_token: token || null, limit: 500 }) });
+    const body = await readJsonOrError(r);
+    render(body.analysis, "Meta live data — " + platform + " " + objectId);
+    document.getElementById("ds-meta-token").value = "";
+    st.textContent = "Done — " + body.fetched + " comments fetched and analysed. Token field cleared.";
+  } catch (err) { st.textContent = err.message; }
+});
+document.getElementById("btn-export").addEventListener("click", () => {
+  if (!A) return;
+  const w = window.open("", "_blank");
+  w.document.write(buildReportHtml(A));
+  w.document.close();
+});
+document.getElementById("btn-whatsapp").addEventListener("click", async (ev) => {
+  if (!A) return;
+  const btn = ev.currentTarget;
+  try { await navigator.clipboard.writeText(buildWhatsAppText(A)); btn.innerHTML = icon("check","w-4 h-4") + " Copied!"; }
+  catch(e) { btn.innerHTML = icon("x","w-4 h-4") + " Copy blocked by browser"; }
+  refreshIcons();
+  setTimeout(() => { btn.innerHTML = icon("message-circle","w-4 h-4") + " Copy WhatsApp summary"; refreshIcons(); }, 2200);
+});
+document.getElementById("btn-reset").addEventListener("click", async () => {
+  try { localStorage.removeItem("cp_last"); } catch(e) {}
+  const r = await fetch("/api/demo");
+  render(await r.json(), "Demo data — Paws & Shine Grooming (fictional)");
 });
 
 fetch("/api/meta/status").then(r => r.json()).then(s => {
@@ -570,10 +744,20 @@ fetch("/api/meta/status").then(r => r.json()).then(s => {
     : "Not connected yet — dashboard runs in Demo Mode. (Token setup is a server environment step.)";
 }).catch(() => { document.getElementById("meta-status").textContent = "Status check failed."; });
 
-fetch("/api/demo").then(r => r.json()).then(render).catch(err => {
-  document.getElementById("loading").innerHTML =
-    '<div class="card p-6 text-sm"><strong>Could not load the analysis.</strong><br><span class="text-zinc-500">' + esc(err.message) + '</span></div>';
-});
+(function loadInitial(){
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("cp_last") || "null"); } catch(e) {}
+  if (saved && saved.a && saved.a.meta && saved.a.meta.total_comments){
+    render(saved.a, saved.label || "Your saved data");
+    return;
+  }
+  fetch("/api/demo").then(r => r.json())
+    .then(a => render(a, "Demo data — Paws & Shine Grooming (fictional)"))
+    .catch(err => {
+      document.getElementById("loading").innerHTML =
+        '<div class="card p-6 text-sm"><strong>Could not load the analysis.</strong><br><span class="text-zinc-500">' + esc(err.message) + '</span></div>';
+    });
+})();
 refreshIcons();
 </script>
 </body>

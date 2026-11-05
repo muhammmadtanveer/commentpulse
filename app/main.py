@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 
 from app.analyze import analyze
@@ -61,6 +61,7 @@ class MetaFetchRequest(BaseModel):
     platform: str  # "facebook" or "instagram"
     object_id: str  # post id (facebook) or media id (instagram)
     limit: int = 100
+    access_token: str | None = None  # user's own token; used once, never stored
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -71,6 +72,9 @@ def dashboard():
 @app.get("/api/demo")
 def api_demo():
     return demo_analysis()
+
+
+MAX_COMMENTS = 5000
 
 
 @app.post("/api/import/text")
@@ -86,34 +90,63 @@ def import_text(payload: TextImport):
                 "platform": item.get("platform"),
                 "author": item.get("author"),
             })
-    return analyze(comments)
+    comments = [c for c in comments if str(c.get("text", "")).strip()]
+    if not comments:
+        return JSONResponse(status_code=400, content={
+            "error": "No comments found. Paste at least one comment (one per line) and try again."})
+    return analyze(comments[:MAX_COMMENTS])
+
+
+@app.get("/api/sample-csv")
+def sample_csv():
+    return FileResponse(SAMPLE_CSV, media_type="text/csv",
+                        filename="commentpulse-sample.csv")
 
 
 @app.post("/api/import/csv")
 async def import_csv(file: UploadFile = File(...)):
     raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        return JSONResponse(status_code=400, content={
+            "error": "File too large (max 5 MB). Split the export and try again."})
     text = raw.decode("utf-8-sig", errors="replace")
     reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        return JSONResponse(status_code=400, content={
+            "error": "That file has no header row. The first row must be: text,timestamp,platform,author"})
+    headers = {h.strip().lower(): h for h in reader.fieldnames if h}
+    if "text" not in headers:
+        return JSONResponse(status_code=400, content={
+            "error": "Your CSV needs a 'text' column with the comment text. "
+                     "Expected columns: text,timestamp,platform,author — download the sample CSV to see the format."})
+    text_col = headers["text"]
+    ts_col = headers.get("timestamp")
+    pf_col = headers.get("platform")
+    au_col = headers.get("author")
     comments = [
         {
-            "text": row.get("text", ""),
-            "timestamp": row.get("timestamp") or None,
-            "platform": row.get("platform") or None,
-            "author": row.get("author") or None,
+            "text": row.get(text_col, ""),
+            "timestamp": (row.get(ts_col) or None) if ts_col else None,
+            "platform": (row.get(pf_col) or None) if pf_col else None,
+            "author": (row.get(au_col) or None) if au_col else None,
         }
         for row in reader
-        if (row.get("text") or "").strip()
+        if (row.get(text_col) or "").strip()
     ]
-    return analyze(comments)
+    if not comments:
+        return JSONResponse(status_code=400, content={
+            "error": "Found the 'text' column but no comments in it. Check the file has comment rows and try again."})
+    return analyze(comments[:MAX_COMMENTS])
 
 
 @app.post("/api/meta/fetch")
 def meta_fetch(req: MetaFetchRequest):
+    import httpx as _httpx
     try:
         if req.platform.lower() == "facebook":
-            comments = fetch_facebook_post_comments(req.object_id, req.limit)
+            comments = fetch_facebook_post_comments(req.object_id, req.limit, token=req.access_token)
         elif req.platform.lower() == "instagram":
-            comments = fetch_instagram_media_comments(req.object_id, req.limit)
+            comments = fetch_instagram_media_comments(req.object_id, req.limit, token=req.access_token)
         else:
             return JSONResponse(
                 status_code=400,
@@ -121,6 +154,23 @@ def meta_fetch(req: MetaFetchRequest):
             )
     except NotConfigured as exc:
         return JSONResponse(status_code=501, content={"error": str(exc)})
+    except _httpx.HTTPStatusError as exc:
+        detail = ""
+        try:
+            detail = exc.response.json().get("error", {}).get("message", "")
+        except Exception:
+            pass
+        return JSONResponse(status_code=502, content={
+            "error": "Meta rejected the request" + (f": {detail}" if detail else
+                     f" (HTTP {exc.response.status_code}). Check the token and the post/media ID.")})
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={
+            "error": f"Could not fetch from Meta ({exc.__class__.__name__}). "
+                     "Check the token and the post/media ID, then try again."})
+    if not comments:
+        return JSONResponse(status_code=404, content={
+            "error": "Meta returned 0 comments for that ID. Check the ID is a post/media you own "
+                     "and that the token has permission to read its comments."})
     return {"fetched": len(comments), "analysis": analyze(comments)}
 
 
