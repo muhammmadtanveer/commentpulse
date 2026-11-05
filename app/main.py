@@ -225,6 +225,62 @@ def demo_whatsapp():
     return "\n".join(lines)
 
 
+_LEGAL_STYLE = ("body{font-family:Georgia,serif;color:#18181b;max-width:760px;"
+                "margin:32px auto;padding:0 20px;line-height:1.6}"
+                "h1{font-size:25px}h2{font-size:17px;margin-top:22px}"
+                "p,li{font-size:14.5px}")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy():
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>CommentPulse — Privacy Policy</title><style>{_LEGAL_STYLE}</style></head><body>
+<h1>CommentPulse — Privacy Policy</h1>
+<p>Last updated: 6 November 2026. CommentPulse is operated by UpSkillz Solutions
+(contact: digitalmarketingexpert1016@gmail.com).</p>
+<h2>What we collect</h2>
+<ul>
+<li><strong>Account basics</strong> — when you log in with Facebook or Google we receive your
+name, email address and profile picture from that provider.</li>
+<li><strong>Social tokens</strong> — if you connect Facebook, your access token is stored
+on our server so the app can list your Pages and fetch comments you ask it to analyse.
+Tokens are never shown in the browser, never sold, and never shared.</li>
+<li><strong>Comments you analyse</strong> — comments fetched from your own Pages/posts, or
+that you paste, upload or link, are processed to produce your analysis. Analyses you run
+while logged in are saved to your account history.</li>
+</ul>
+<h2>What we do not do</h2>
+<ul>
+<li>We do not sell personal data or use it for advertising.</li>
+<li>We do not fetch data from accounts you have not connected or content you have not provided.</li>
+<li>We do not post, message or change anything on your social accounts — access is read-only.</li>
+</ul>
+<h2>Your control</h2>
+<p>You can log out at any time, disconnect Facebook in your Facebook settings
+(Settings → Business integrations / Apps), and request full deletion of your account
+data by emailing digitalmarketingexpert1016@gmail.com.</p>
+<h2>Third parties</h2>
+<p>Login and data fetching use Meta (Facebook/Instagram), Google/YouTube and Reddit
+official APIs under their own policies. Hosting is provided by Render.</p>
+</body></html>"""
+
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms():
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>CommentPulse — Terms of Use</title><style>{_LEGAL_STYLE}</style></head><body>
+<h1>CommentPulse — Terms of Use</h1>
+<p>Last updated: 6 November 2026.</p>
+<p>CommentPulse analyses comments from accounts you own or content you provide,
+and produces topic, repetition, sentiment and trend reports. Predictions shown in
+reports are estimates computed from the analysed data, not guarantees.</p>
+<p>You are responsible for having the right to analyse any content you connect,
+paste, upload or link. The service is provided "as is" without warranties; the
+operator (UpSkillz Solutions) is not liable for decisions made from reports.
+Contact: digitalmarketingexpert1016@gmail.com.</p>
+</body></html>"""
+
+
 @app.get("/report/demo", response_class=HTMLResponse)
 def report_demo():
     a = demo_analysis()
