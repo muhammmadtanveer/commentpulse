@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 
@@ -22,12 +22,16 @@ from app.meta_api import (
     fetch_instagram_media_comments,
     is_configured,
 )
+from app import auth as auth_module
+from app.urlfetch import UrlError, fetch_by_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SAMPLE_CSV = BASE_DIR / "data" / "sample_comments.csv"
 DASHBOARD_HTML = Path(__file__).resolve().parent / "dashboard.html"
 
 app = FastAPI(title="CommentPulse", version="0.1.0")
+
+auth_module.register(app)
 
 _demo_cache = {}
 
@@ -177,6 +181,25 @@ def meta_fetch(req: MetaFetchRequest):
 @app.get("/api/meta/status")
 def meta_status():
     return {"configured": is_configured()}
+
+
+class UrlAnalyzeRequest(BaseModel):
+    url: str
+
+
+@app.post("/api/url/analyze")
+def url_analyze(req: UrlAnalyzeRequest, request: Request):
+    try:
+        platform, object_id, comments = fetch_by_url(req.url)
+    except UrlError as exc:
+        return JSONResponse(status_code=exc.status, content={"error": exc.message})
+    result = analyze(comments[:MAX_COMMENTS])
+    label = f"{platform.title()} {object_id} ({len(comments)} comments)"
+    user = auth_module.current_user(request)
+    if user:
+        from app import db as _db
+        _db.save_analysis(user["id"], label, result)
+    return {"fetched": len(comments), "platform": platform, "label": label, "analysis": result}
 
 
 @app.get("/api/demo/whatsapp", response_class=PlainTextResponse)

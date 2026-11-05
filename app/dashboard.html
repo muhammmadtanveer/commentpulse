@@ -105,6 +105,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             <div id="bell-items" class="text-sm"></div>
           </div>
         </div>
+        <div id="auth-area" class="flex items-center gap-2"></div>
         <div class="relative">
           <button id="profile-btn" class="flex items-center gap-2.5 h-10 pl-1 pr-2 rounded-lg hover:bg-zinc-50 transition">
             <span class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[13px] font-bold">PS</span>
@@ -157,6 +158,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold bg-accent text-white transition" data-tab="paste">Paste comments</button>
             <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="csv">Upload CSV</button>
             <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="meta">Facebook / Instagram</button>
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="url">Paste a URL</button>
           </div>
 
           <div id="ds-panel-paste" class="ds-panel mt-4">
@@ -183,7 +185,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
           </div>
 
           <div id="ds-panel-meta" class="ds-panel mt-4 hidden">
-            <p class="text-[13px] text-zinc-600 leading-relaxed">Fetch comments straight from a post you own. You need a Meta access token with comment-read permission (from Meta Graph API Explorer) and the post / media ID. Your token is used for this one fetch and is <strong>never stored</strong>. One-click "Connect with Facebook" login arrives once the Meta app review is done — this token route works today.</p>
+            <p class="text-[13px] text-zinc-600 leading-relaxed">Easiest path: <strong>log in with Facebook</strong> (top right) — your Pages appear below and every post gets a one-click Analyse button. This token route is the manual fallback: a Meta access token with comment-read permission (from Meta Graph API Explorer) and the post / media ID. A token pasted here is used for this one fetch and is <strong>never stored</strong>.</p>
             <div class="grid sm:grid-cols-4 gap-2.5 mt-3">
               <select id="ds-meta-platform" class="h-10 rounded-lg border border-zinc-300 bg-white text-sm px-2">
                 <option value="facebook">Facebook post</option>
@@ -195,6 +197,36 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             <div class="flex items-center gap-3 mt-2.5 flex-wrap">
               <button id="ds-meta-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Fetch &amp; analyse</button>
               <span id="ds-meta-status" class="text-[13px] text-zinc-500"></span>
+            </div>
+          </div>
+
+          <div id="ds-panel-url" class="ds-panel mt-4 hidden">
+            <p class="text-[13px] text-zinc-600 leading-relaxed">Paste a link — comments are fetched and analysed automatically. <strong>Works today:</strong> YouTube videos, Reddit posts. <strong>X (Twitter):</strong> ready, needs the paid X API key. <strong>Facebook / Instagram:</strong> Meta bans URL fetching — use Facebook login instead. <strong>LinkedIn / TikTok:</strong> their APIs are locked to partners — use Paste or CSV.</p>
+            <div class="flex items-center gap-3 mt-3 flex-wrap">
+              <input id="ds-url-input" type="url" placeholder="https://www.youtube.com/watch?v=… or a Reddit post link" class="h-10 flex-1 min-w-[260px] rounded-lg border border-zinc-300 bg-white text-sm px-3">
+              <button id="ds-url-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Fetch &amp; analyse</button>
+              <span id="ds-url-status" class="text-[13px] text-zinc-500"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Connected accounts -->
+        <section id="accounts" class="card p-5 sm:p-6 scroll-mt-24 hidden">
+          <h2 class="text-[17px] font-extrabold flex items-center gap-2"><i data-lucide="plug-zap" class="w-5 h-5 text-accent"></i> My connected accounts</h2>
+          <div id="accounts-login" class="mt-3 hidden">
+            <p class="text-[13.5px] text-zinc-600">Log in with Facebook and your Pages appear here — pick a post, click Analyse, done. No tokens to copy anywhere.</p>
+            <div class="flex gap-2 mt-3 flex-wrap">
+              <a href="/auth/facebook/login" class="h-10 px-4 rounded-lg bg-[#1877F2] text-white text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition">Continue with Facebook</a>
+              <a href="/auth/google/login" class="h-10 px-4 rounded-lg border border-zinc-300 bg-white text-sm font-semibold flex items-center gap-2 hover:bg-zinc-50 transition">Continue with Google</a>
+            </div>
+          </div>
+          <div id="accounts-body" class="mt-3 hidden">
+            <div class="text-[13px] font-semibold text-zinc-500 uppercase tracking-wide">Your Facebook Pages</div>
+            <div id="pages-list" class="grid sm:grid-cols-2 gap-2.5 mt-2"></div>
+            <div id="posts-area" class="mt-4"></div>
+            <div class="border-t border-zinc-100 mt-5 pt-4">
+              <div class="text-[13px] font-semibold text-zinc-500 uppercase tracking-wide">Saved analyses</div>
+              <div id="history-list" class="mt-2 space-y-1.5 text-sm"></div>
             </div>
           </div>
         </section>
@@ -743,6 +775,162 @@ fetch("/api/meta/status").then(r => r.json()).then(s => {
     ? "Meta token configured — live fetching is available."
     : "Not connected yet — dashboard runs in Demo Mode. (Token setup is a server environment step.)";
 }).catch(() => { document.getElementById("meta-status").textContent = "Status check failed."; });
+
+/* ---------- accounts: login, pages, posts, history, URL fetch ---------- */
+window.CP_USER = null;
+let lastCloudSave = "";
+function maybeCloudSave(){
+  if (!window.CP_USER || !A) return;
+  if (CP_LABEL.indexOf("Demo data") === 0) return;
+  const key = CP_LABEL + "|" + A.meta.total_comments;
+  if (key === lastCloudSave) return;
+  lastCloudSave = key;
+  fetch("/api/analyses", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label: CP_LABEL, analysis: A }) }).then(() => loadHistory()).catch(() => {});
+}
+const _renderOrig = render;
+render = function(a, label){ _renderOrig(a, label); maybeCloudSave(); };
+
+async function initAuth(){
+  const area = document.getElementById("auth-area");
+  const sec = document.getElementById("accounts");
+  try {
+    const me = await (await fetch("/api/me")).json();
+    if (!me.user){
+      area.innerHTML =
+        '<a href="/auth/facebook/login" class="h-9 px-3.5 rounded-lg bg-[#1877F2] text-white text-[13px] font-semibold flex items-center hover:opacity-90 transition">Facebook login</a>' +
+        '<a href="/auth/google/login" class="h-9 px-3.5 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold flex items-center hover:bg-zinc-50 transition">Google login</a>';
+      sec.classList.remove("hidden");
+      document.getElementById("accounts-login").classList.remove("hidden");
+      return;
+    }
+    window.CP_USER = me.user;
+    const initials = esc((me.user.name || "U").split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase());
+    area.innerHTML =
+      (me.user.avatar ? '<img src="' + esc(me.user.avatar) + '" class="w-8 h-8 rounded-full" alt="">' :
+        '<span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[12px] font-bold">' + initials + '</span>') +
+      '<span class="hidden md:block text-[13px] font-semibold max-w-[140px] truncate">' + esc(me.user.name || "") + '</span>' +
+      '<button id="logout-btn" class="h-9 px-3 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold hover:bg-zinc-50 transition">Log out</button>';
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await fetch("/auth/logout", { method: "POST" }); location.reload();
+    });
+    sec.classList.remove("hidden");
+    if (me.facebook_connected){
+      document.getElementById("accounts-body").classList.remove("hidden");
+      loadPages(); loadHistory();
+    } else {
+      document.getElementById("accounts-login").classList.remove("hidden");
+    }
+  } catch(e) { /* auth is additive; dashboard still works logged-out */ }
+}
+async function loadPages(){
+  const box = document.getElementById("pages-list");
+  box.innerHTML = '<span class="text-[13px] text-zinc-500">Loading your Pages…</span>';
+  try {
+    const body = await readJsonOrError(await fetch("/api/facebook/pages"));
+    if (!body.pages.length){ box.innerHTML = '<span class="text-[13px] text-zinc-500">No Pages found on this Facebook account.</span>'; return; }
+    box.innerHTML = "";
+    body.pages.forEach(p => {
+      const d = document.createElement("div");
+      d.className = "border border-zinc-200 rounded-lg p-3 bg-white";
+      d.innerHTML = '<div class="font-semibold text-[14px]">' + esc(p.name) + '</div>' +
+        '<div class="text-[12px] text-zinc-500">' + esc(p.category || "") + (p.instagram ? ' · IG: @' + esc(p.instagram.username || "") : '') + '</div>' +
+        '<div class="flex gap-2 mt-2 flex-wrap">' +
+        '<button class="h-8 px-3 rounded-lg bg-accent text-white text-[12.5px] font-semibold" data-posts="' + p.id + '">View posts</button>' +
+        (p.instagram ? '<button class="h-8 px-3 rounded-lg border border-zinc-300 text-[12.5px] font-semibold" data-ig="' + p.instagram.id + '">Instagram posts</button>' : '') +
+        '</div>';
+      box.appendChild(d);
+    });
+    box.querySelectorAll("[data-posts]").forEach(b => b.addEventListener("click", () => loadPosts(b.dataset.posts)));
+    box.querySelectorAll("[data-ig]").forEach(b => b.addEventListener("click", () => loadIgMedia(b.dataset.ig)));
+  } catch(err){ box.innerHTML = '<span class="text-[13px] text-red-600">' + esc(err.message) + '</span>'; }
+}
+function postRowHtml(kind, item){
+  const text = esc(item.message || item.caption || "(no text)");
+  const count = item.comments_count != null ? item.comments_count : "?";
+  return '<div class="flex items-start justify-between gap-3 border border-zinc-100 rounded-lg px-3 py-2.5 bg-zinc-50/60">' +
+    '<div class="min-w-0"><div class="text-[13.5px] truncate">' + text + '</div>' +
+    '<div class="text-[12px] text-zinc-500">' + count + ' comments · ' + esc((item.created_time || item.timestamp || "").slice(0,10)) + '</div></div>' +
+    '<button class="h-8 px-3 shrink-0 rounded-lg bg-accent text-white text-[12.5px] font-semibold" data-analyse-' + kind + '="' + item.id + '">Analyse</button></div>';
+}
+async function loadPosts(pageId){
+  const area = document.getElementById("posts-area");
+  area.innerHTML = '<span class="text-[13px] text-zinc-500">Loading posts…</span>';
+  try {
+    const body = await readJsonOrError(await fetch("/api/facebook/pages/" + pageId + "/posts"));
+    if (!body.posts.length){ area.innerHTML = '<span class="text-[13px] text-zinc-500">This Page has no posts Meta will return.</span>'; return; }
+    area.innerHTML = '<div class="text-[13px] font-semibold text-zinc-500 uppercase tracking-wide mb-2">Recent posts — pick one</div>' +
+      '<div class="space-y-2">' + body.posts.map(p => postRowHtml("fb", p)).join("") + '</div>';
+    area.querySelectorAll("[data-analyse-fb]").forEach(b => b.addEventListener("click", async () => {
+      b.textContent = "Fetching…"; b.disabled = true;
+      try {
+        const r = await readJsonOrError(await fetch("/api/facebook/analyze", { method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page_id: pageId, post_id: b.dataset.analyseFb }) }));
+        render(r.analysis, r.label); loadHistory();
+        document.getElementById("datasource").scrollIntoView({ behavior: "smooth" });
+      } catch(err){ b.textContent = "Analyse"; b.disabled = false; alert(err.message); }
+    }));
+  } catch(err){ area.innerHTML = '<span class="text-[13px] text-red-600">' + esc(err.message) + '</span>'; }
+}
+async function loadIgMedia(igId){
+  const area = document.getElementById("posts-area");
+  area.innerHTML = '<span class="text-[13px] text-zinc-500">Loading Instagram posts…</span>';
+  try {
+    const body = await readJsonOrError(await fetch("/api/instagram/" + igId + "/media"));
+    if (!body.media.length){ area.innerHTML = '<span class="text-[13px] text-zinc-500">No Instagram media returned.</span>'; return; }
+    area.innerHTML = '<div class="text-[13px] font-semibold text-zinc-500 uppercase tracking-wide mb-2">Instagram posts — pick one</div>' +
+      '<div class="space-y-2">' + body.media.map(m => postRowHtml("ig", m)).join("") + '</div>';
+    area.querySelectorAll("[data-analyse-ig]").forEach(b => b.addEventListener("click", async () => {
+      b.textContent = "Fetching…"; b.disabled = true;
+      try {
+        const r = await readJsonOrError(await fetch("/api/instagram/analyze", { method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ig_id: igId, media_id: b.dataset.analyseIg }) }));
+        render(r.analysis, r.label); loadHistory();
+        document.getElementById("datasource").scrollIntoView({ behavior: "smooth" });
+      } catch(err){ b.textContent = "Analyse"; b.disabled = false; alert(err.message); }
+    }));
+  } catch(err){ area.innerHTML = '<span class="text-[13px] text-red-600">' + esc(err.message) + '</span>'; }
+}
+async function loadHistory(){
+  const box = document.getElementById("history-list");
+  if (!box || !window.CP_USER) return;
+  try {
+    const body = await readJsonOrError(await fetch("/api/analyses"));
+    if (!body.analyses.length){ box.innerHTML = '<span class="text-zinc-500 text-[13px]">Nothing saved yet — analyses you run while logged in are saved here.</span>'; return; }
+    box.innerHTML = "";
+    body.analyses.forEach(a => {
+      const d = document.createElement("div");
+      d.className = "flex items-center justify-between gap-3";
+      d.innerHTML = '<span class="truncate">' + esc(a.label) + '</span>' +
+        '<span class="text-zinc-400 text-[12px] shrink-0">' + new Date(a.created_at * 1000).toLocaleDateString() + '</span>' +
+        '<button class="h-7 px-2.5 shrink-0 rounded-md border border-zinc-300 text-[12px] font-semibold" data-load="' + a.id + '">Open</button>';
+      box.appendChild(d);
+    });
+    box.querySelectorAll("[data-load]").forEach(b => b.addEventListener("click", async () => {
+      try {
+        const r = await readJsonOrError(await fetch("/api/analyses/" + b.dataset.load));
+        render(r.analysis, r.label);
+        document.getElementById("datasource").scrollIntoView({ behavior: "smooth" });
+      } catch(err){ alert(err.message); }
+    }));
+  } catch(e) {}
+}
+document.getElementById("ds-url-btn").addEventListener("click", async () => {
+  const st = document.getElementById("ds-url-status");
+  const url = document.getElementById("ds-url-input").value.trim();
+  if (!url){ st.textContent = "Paste a URL first."; return; }
+  st.textContent = "Fetching comments…";
+  try {
+    const r = await readJsonOrError(await fetch("/api/url/analyze", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url }) }));
+    render(r.analysis, r.label);
+    st.textContent = "Done — " + r.fetched + " comments fetched and analysed.";
+    loadHistory();
+  } catch(err){ st.textContent = err.message; }
+});
+initAuth();
 
 (function loadInitial(){
   let saved = null;

@@ -70,3 +70,45 @@ def fetch_instagram_media_comments(media_id: str, limit: int = 100, token: str |
 
 def is_configured() -> bool:
     return bool(os.environ.get("META_ACCESS_TOKEN", "").strip())
+
+
+# ---- helpers for logged-in (connected account) flows -----------------------
+
+def graph_get(path: str, token: str, params: dict | None = None) -> dict:
+    """GET against the Graph API with an explicit token (user or page)."""
+    return _get(path, params or {}, token=token)
+
+
+def get_user_pages(user_token: str) -> list:
+    """Pages the user manages, with page tokens and linked IG accounts.
+
+    Page access tokens stay server-side; only safe display fields are
+    returned to callers that pass data to the browser.
+    """
+    data = _get(
+        "me/accounts",
+        {"fields": "id,name,category,access_token,instagram_business_account{id,username,name}",
+         "limit": 100},
+        token=user_token,
+    )
+    return data.get("data", [])
+
+
+def get_page_posts(page_id: str, page_token: str, limit: int = 25) -> list:
+    data = _get(
+        f"{page_id}/posts",
+        {"fields": "id,message,created_time,comments.limit(0).summary(true)",
+         "limit": limit},
+        token=page_token,
+    )
+    return data.get("data", [])
+
+
+def get_ig_media(ig_user_id: str, token: str, limit: int = 25) -> list:
+    data = _get(
+        f"{ig_user_id}/media",
+        {"fields": "id,caption,media_type,timestamp,comments_count,permalink",
+         "limit": limit},
+        token=token,
+    )
+    return data.get("data", [])
