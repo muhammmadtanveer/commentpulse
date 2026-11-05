@@ -7,6 +7,8 @@ conversation, and **what is likely to come next**.
 
 Built by UpSkillz Solutions. Spec: `~/workspace/comment-intel-product/SPEC.md`.
 
+**Live demo:** https://commentpulse-86rh.onrender.com (Render free tier — sleeps when idle, first load can take ~50s to wake)
+
 ## Run it (Demo Mode)
 
 ```bash

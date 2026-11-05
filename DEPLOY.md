@@ -40,7 +40,13 @@ Try these:
 
 Stop the server: `Ctrl + C`.
 
-## 3. Deploy it LIVE (public link anyone can open) — recommended: Render
+## 3. Deploy it LIVE — DONE 2026-11-05
+**Live: https://commentpulse-86rh.onrender.com** (Render free tier, Docker,
+Ohio region; sleeps when idle — first load after sleep can take ~50s).
+Repo: https://github.com/muhammmadtanveer/commentpulse — every push to
+`main` auto-redeploys. Original deploy notes below.
+
+## 3b. How the deploy was set up — recommended: Render
 Why Render, honestly:
 - **Vercel is a bad fit here** — CommentPulse uses scikit-learn (heavy Python);
   Vercel's serverless size limits will likely break it. Vercel was fine for
