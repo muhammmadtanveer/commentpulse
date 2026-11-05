@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn>=0.29
+scikit-learn>=1.4
+vaderSentiment>=3.3
+httpx>=0.27
+python-multipart>=0.0.9

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CommentPulse — Dashboard</title>
+<style>
+  :root { --ink:#1d2733; --muted:#5b6b7c; --accent:#e4572e; --good:#2e933c; --bad:#c1292e; --card:#ffffff; --bg:#f2f5f8; }
+  * { box-sizing:border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+  header { background:var(--ink); color:#fff; padding:18px 28px; }
+  header h1 { margin:0; font-size:24px; }
+  header p { margin:4px 0 0; color:#c8d3de; font-size:14px; }
+  main { max-width:980px; margin:0 auto; padding:20px 16px 48px; }
+  .cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .stat { background:var(--card); border-radius:10px; padding:14px 18px; flex:1 1 180px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .stat .num { font-size:28px; font-weight:700; }
+  .stat .cap { color:var(--muted); font-size:13px; }
+  section { background:var(--card); border-radius:10px; padding:18px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  section h2 { margin:0 0 12px; font-size:18px; }
+  .topic { margin-bottom:14px; }
+  .topic .row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px; }
+  .bar { height:14px; background:#e4eaf0; border-radius:7px; overflow:hidden; }
+  .bar > div { height:100%; background:var(--accent); border-radius:7px; }
+  .terms { color:var(--muted); font-size:12px; margin-top:3px; }
+  .sent { font-size:12px; color:var(--muted); margin-top:2px; }
+  .ex { font-size:13px; font-style:italic; color:#33475c; margin:3px 0 0 10px; }
+  .pos { color:var(--good); } .neg { color:var(--bad); }
+  .gist { font-size:15px; line-height:1.55; }
+  .est { display:inline-block; background:#fff3cd; color:#856404; border:1px solid #ffe08a; border-radius:4px; font-size:11px; font-weight:700; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+  ul { margin:6px 0 6px 18px; padding:0; }
+  li { margin-bottom:8px; font-size:14px; line-height:1.45; }
+  .split { display:flex; height:22px; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .split .p { background:var(--good); } .split .n { background:#aebac6; } .split .g { background:var(--bad); }
+  .legend { font-size:13px; color:var(--muted); margin-top:6px; }
+  #status { color:var(--muted); font-size:14px; }
+  @media print { body { background:#fff; } section, .stat { box-shadow:none; border:1px solid #ddd; } header { background:#fff; color:#000; } header p { color:#444; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>CommentPulse</h1>
+  <p id="subtitle">Comment intelligence — what people are talking about, what keeps repeating, and what is coming next.</p>
+</header>
+<main>
+  <p id="status">Loading demo analysis…</p>
+  <div id="app" style="display:none">
+    <div class="cards">
+      <div class="stat"><div class="num" id="stat-total">–</div><div class="cap">Total comments analysed</div></div>
+      <div class="stat"><div class="num" id="stat-topics">–</div><div class="cap">Topics found</div></div>
+      <div class="stat"><div class="num" id="stat-sent">–</div><div class="cap">Average sentiment (−1 to +1)</div></div>
+      <div class="stat"><div class="num" id="stat-repeat">–</div><div class="cap">Comments in repeated themes</div></div>
+    </div>
+
+    <section>
+      <h2>Sentiment split</h2>
+      <div class="split" id="sent-split"></div>
+      <div class="legend" id="sent-legend"></div>
+    </section>
+
+    <section>
+      <h2>Lub-e-lubab — the gist</h2>
+      <div class="gist" id="gist"></div>
+    </section>
+
+    <section>
+      <h2>Topics discussed</h2>
+      <div id="topics"></div>
+    </section>
+
+    <section>
+      <h2>Overlap — what keeps repeating</h2>
+      <div id="overlap"></div>
+    </section>
+
+    <section>
+      <h2>Predictions</h2>
+      <div id="predictions"></div>
+    </section>
+
+    <p class="legend" id="meta-note"></p>
+  </div>
+</main>
+<script>
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+fetch("/api/demo").then(r => r.json()).then(a => {
+  document.getElementById("status").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  const repCount = a.overlap.reduce((s,o)=>s+o.count,0);
+  document.getElementById("stat-total").textContent = a.meta.total_comments;
+  document.getElementById("stat-topics").textContent = a.topics.length;
+  document.getElementById("stat-sent").textContent = a.meta.avg_sentiment;
+  document.getElementById("stat-repeat").textContent = repCount;
+
+  const s = a.sentiment;
+  document.getElementById("sent-split").innerHTML =
+    '<div class="p" style="width:'+s.positive.pct+'%"></div>' +
+    '<div class="n" style="width:'+s.neutral.pct+'%"></div>' +
+    '<div class="g" style="width:'+s.negative.pct+'%"></div>';
+  document.getElementById("sent-legend").textContent =
+    "Positive " + s.positive.count + " (" + s.positive.pct + "%) · Neutral " +
+    s.neutral.count + " (" + s.neutral.pct + "%) · Negative " +
+    s.negative.count + " (" + s.negative.pct + "%)";
+
+  const g = a.gist;
+  document.getElementById("gist").innerHTML =
+    "<p><strong>" + esc(g.headline) + "</strong></p><ul>" +
+    g.bullets.map(b => "<li>" + esc(b) + "</li>").join("") + "</ul>";
+
+  document.getElementById("topics").innerHTML = a.topics.map(t =>
+    '<div class="topic"><div class="row"><strong>' + esc(t.label) + '</strong><span>' +
+    t.count + " comments · " + t.share_pct + '%</span></div>' +
+    '<div class="bar"><div style="width:' + t.share_pct + '%"></div></div>' +
+    '<div class="terms">Top terms: ' + esc(t.top_terms.join(", ")) + '</div>' +
+    '<div class="sent"><span class="pos">▲ ' + t.sentiment.positive.pct + '% positive</span> · ' +
+    t.sentiment.neutral.pct + '% neutral · <span class="neg">▼ ' + t.sentiment.negative.pct + '% negative</span></div>' +
+    t.examples.map(e => '<p class="ex">“' + esc(e) + '”</p>').join("") +
+    "</div>").join("");
+
+  document.getElementById("overlap").innerHTML = a.overlap.length ? "<ul>" + a.overlap.map(o =>
+    "<li><strong>" + esc(o.theme) + "</strong> — " + o.count + " comments (" + o.share_pct + "%)" +
+    '<br><span class="ex">“' + esc(o.representative) + '”</span></li>').join("") + "</ul>"
+    : "<p>No repeated themes found.</p>";
+
+  const p = a.predictions;
+  let ph = "";
+  if (p.rising_topics && p.rising_topics.length) {
+    ph += "<p><strong>Rising topics</strong><span class='est'>ESTIMATE</span></p><ul>" +
+      p.rising_topics.map(r => "<li>" + esc(r.topic) + ": " + r.earlier_share_pct + "% → " +
+        r.latest_week_share_pct + "% of comments in the latest week (+" + r.change_points + " pts)</li>").join("") + "</ul>";
+  }
+  if (p.sentiment_direction) {
+    ph += "<p><strong>Sentiment direction: " + esc(p.sentiment_direction.direction) + "</strong>" +
+      "<span class='est'>ESTIMATE</span> — average sentiment " + p.sentiment_direction.first_half_avg +
+      " (first half) → " + p.sentiment_direction.second_half_avg + " (second half).</p>";
+  }
+  if (p.likely_questions && p.likely_questions.length) {
+    ph += "<p><strong>Likely to flood the next post</strong><span class='est'>ESTIMATE</span></p><ul>" +
+      p.likely_questions.map(q => "<li>" + esc(q.question_theme) + " — asked " + q.times_asked +
+        ' times, e.g. “' + esc(q.representative) + '”</li>').join("") + "</ul>";
+  }
+  if (p.content_ideas && p.content_ideas.length) {
+    ph += "<p><strong>Content ideas</strong><span class='est'>ESTIMATE</span></p><ul>" +
+      p.content_ideas.map(c => "<li>" + esc(c.idea) + "</li>").join("") + "</ul>";
+  }
+  document.getElementById("predictions").innerHTML = ph || "<p>Not enough data for predictions.</p>";
+
+  const m = a.meta;
+  let note = "Method: " + esc(m.method) + ".";
+  if (m.date_range) note += " Comments from " + m.date_range.from + " to " + m.date_range.to + ".";
+  if (m.sample_note) note += " " + m.sample_note;
+  document.getElementById("meta-note").textContent = note;
+}).catch(err => {
+  document.getElementById("status").textContent = "Could not load demo analysis: " + err;
+});
+</script>
+</body>
+</html>
