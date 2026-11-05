@@ -46,40 +46,21 @@ _page_token_cache: dict = {}
 
 
 # ---------------------------------------------------------------- sessions
-def _secret() -> bytes:
-    return os.environ.get("SESSION_SECRET", "dev-secret-change-me").encode()
-
-
-def _sign(payload: dict) -> str:
-    raw = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
-    sig = hmac.new(_secret(), raw.encode(), hashlib.sha256).hexdigest()
-    return f"{raw}.{sig}"
-
-
-def _unsign(value: str):
-    try:
-        raw, sig = value.rsplit(".", 1)
-        expected = hmac.new(_secret(), raw.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            return None
-        payload = json.loads(base64.urlsafe_b64decode(raw.encode()))
-        if payload.get("exp", 0) < time.time():
-            return None
-        return payload
-    except Exception:
-        return None
+# Server-side sessions stored in the DB (see app/db.py). SESSION_SECRET is no
+# longer used for cookie signing; it remains set on the server harmlessly.
 
 
 def current_user(request: Request):
-    payload = _unsign(request.cookies.get("cp_session", ""))
-    if not payload:
-        return None
-    return db.get_user(payload.get("uid", ""))
+    """Sessions live in the database (table `sessions`); the cookie holds
+    only a random session id whose hash is stored server-side."""
+    return db.get_session_user(request.cookies.get("cp_session", ""))
 
 
-def _session_cookie(resp, user_id: str):
-    resp.set_cookie("cp_session", _sign({"uid": user_id, "exp": time.time() + 30 * 86400}),
-                    max_age=30 * 86400, httponly=True, samesite="lax")
+def _session_cookie(resp, user_id: str, request: Request = None):
+    ua = request.headers.get("user-agent", "") if request else ""
+    sid = db.create_session(user_id, ua)
+    resp.set_cookie("cp_session", sid, max_age=30 * 86400,
+                    httponly=True, samesite="lax")
     return resp
 
 
@@ -174,7 +155,7 @@ def register(app):
         db.save_token(uid, "facebook", token,
                       time.time() + expires_in if expires_in else None)
         resp = RedirectResponse("/")
-        _session_cookie(resp, uid)
+        _session_cookie(resp, uid, request)
         resp.delete_cookie("cp_state")
         return resp
 
@@ -222,12 +203,13 @@ def register(app):
         if tok.get("refresh_token"):
             db.save_token(uid, "google_refresh", tok["refresh_token"], None)
         resp = RedirectResponse("/")
-        _session_cookie(resp, uid)
+        _session_cookie(resp, uid, request)
         resp.delete_cookie("cp_state")
         return resp
 
     @app.post("/auth/logout")
-    def logout():
+    def logout(request: Request):
+        db.delete_session(request.cookies.get("cp_session", ""))
         resp = JSONResponse({"ok": True})
         resp.delete_cookie("cp_session")
         return resp

@@ -69,6 +69,53 @@ def _run(conn, sql, params=(), fetch=None):
     return None
 
 
+# ------------------------------------------------------------------ sessions
+import hashlib
+import secrets as _secrets
+
+
+def _hash_sid(sid: str) -> str:
+    return hashlib.sha256(sid.encode()).hexdigest()
+
+
+def create_session(user_id: str, user_agent: str = "") -> str:
+    """Create a server-side session row; returns the raw session id (cookie)."""
+    sid = _secrets.token_urlsafe(32)
+    now = time.time()
+    conn = _connect()
+    try:
+        _run(conn, "INSERT INTO sessions (id_hash, user_id, created_at, expires_at, user_agent)"
+                   " VALUES (?,?,?,?,?)",
+             (_hash_sid(sid), user_id, now, now + 30 * 86400, (user_agent or "")[:200]))
+        return sid
+    finally:
+        conn.close()
+
+
+def get_session_user(sid: str):
+    if not sid:
+        return None
+    conn = _connect()
+    try:
+        row = _run(conn, "SELECT * FROM sessions WHERE id_hash=?",
+                   (_hash_sid(sid),), fetch="one")
+        if not row or row["expires_at"] < time.time():
+            return None
+        return get_user(row["user_id"])
+    finally:
+        conn.close()
+
+
+def delete_session(sid: str):
+    if not sid:
+        return
+    conn = _connect()
+    try:
+        _run(conn, "DELETE FROM sessions WHERE id_hash=?", (_hash_sid(sid),))
+    finally:
+        conn.close()
+
+
 def init_db():
     conn = _connect()
     try:
@@ -82,6 +129,9 @@ def init_db():
         _run(conn, """CREATE TABLE IF NOT EXISTS analyses (
             id TEXT PRIMARY KEY, user_id TEXT, label TEXT,
             payload TEXT, created_at REAL)""")
+        _run(conn, """CREATE TABLE IF NOT EXISTS sessions (
+            id_hash TEXT PRIMARY KEY, user_id TEXT,
+            created_at REAL, expires_at REAL, user_agent TEXT)""")
     finally:
         conn.close()
 

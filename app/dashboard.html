@@ -108,16 +108,23 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
         <div id="auth-area" class="flex items-center gap-2"></div>
         <div class="relative">
           <button id="profile-btn" class="flex items-center gap-2.5 h-10 pl-1 pr-2 rounded-lg hover:bg-zinc-50 transition">
-            <span class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[13px] font-bold">PS</span>
+            <span id="profile-avatar" class="w-8 h-8 rounded-full bg-zinc-400 text-white flex items-center justify-center text-[13px] font-bold overflow-hidden">G</span>
             <span class="hidden sm:block text-left leading-tight">
-              <span class="block text-[13px] font-semibold" id="dataset-name">Paws &amp; Shine</span>
-              <span class="block text-[11px] text-zinc-500" id="dataset-sub">Sample business · Demo</span>
+              <span class="block text-[13px] font-semibold" id="profile-name">Guest</span>
+              <span class="block text-[11px] text-zinc-500" id="profile-sub">Not logged in</span>
             </span>
             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400"></i>
           </button>
           <div id="profile-menu" class="dropdown absolute right-0 mt-2 w-60 card p-2 z-30 text-sm">
-            <div class="px-2 py-1.5 text-zinc-500 text-[12px]">Signed in for analysis of</div>
-            <div class="px-2 pb-1.5 font-semibold">Paws &amp; Shine Grooming</div>
+            <div class="px-2 py-1.5 text-zinc-500 text-[12px]" id="menu-state">Not logged in — viewing demo data</div>
+            <div class="px-2 font-semibold" id="menu-user">Guest</div>
+            <div class="px-2 pb-1.5 text-[12px] text-zinc-500 hidden" id="menu-email"></div>
+            <div class="border-t border-zinc-100 my-1"></div>
+            <div id="menu-login-links">
+              <a class="nav-item" href="/auth/facebook/login"><i data-lucide="facebook" class="w-4 h-4"></i><span>Log in with Facebook</span></a>
+              <a class="nav-item" href="/auth/google/login"><i data-lucide="chrome" class="w-4 h-4"></i><span>Log in with Google</span></a>
+            </div>
+            <div class="nav-item hidden" id="menu-logout"><i data-lucide="log-out" class="w-4 h-4"></i><span>Log out</span></div>
             <div class="border-t border-zinc-100 my-1"></div>
             <a class="nav-item" href="/report/demo" target="_blank" rel="noopener"><i data-lucide="file-text" class="w-4 h-4"></i><span>Printable report (demo)</span></a>
             <a class="nav-item" href="/api/demo/whatsapp" target="_blank" rel="noopener"><i data-lucide="message-circle" class="w-4 h-4"></i><span>WhatsApp summary (demo)</span></a>
@@ -503,8 +510,6 @@ let CP_LABEL = "Demo data — Paws & Shine Grooming (fictional)";
 function applyDatasetLabel(){
   const isDemo = CP_LABEL.indexOf("Demo data") === 0;
   document.getElementById("dataset-badge").textContent = CP_LABEL;
-  document.getElementById("dataset-name").textContent = isDemo ? "Paws & Shine" : "My data";
-  document.getElementById("dataset-sub").textContent = isDemo ? "Sample business · Demo" : CP_LABEL;
   document.getElementById("side-note").innerHTML = isDemo
     ? "<strong>Demo Mode</strong><br>Sample data: Paws &amp; Shine Grooming (fictional). Add your own data above the KPIs."
     : "<strong>Your data</strong><br>" + esc(CP_LABEL) + "<br>Saved in this browser only.";
@@ -791,11 +796,38 @@ function maybeCloudSave(){
 const _renderOrig = render;
 render = function(a, label){ _renderOrig(a, label); maybeCloudSave(); };
 
+function setProfileUI(user){
+  const av = document.getElementById("profile-avatar");
+  const nm = document.getElementById("profile-name");
+  const sb = document.getElementById("profile-sub");
+  const mState = document.getElementById("menu-state");
+  const mUser = document.getElementById("menu-user");
+  const mEmail = document.getElementById("menu-email");
+  const mLogin = document.getElementById("menu-login-links");
+  const mLogout = document.getElementById("menu-logout");
+  if (!user){
+    av.innerHTML = "G"; av.className = "w-8 h-8 rounded-full bg-zinc-400 text-white flex items-center justify-center text-[13px] font-bold overflow-hidden";
+    nm.textContent = "Guest"; sb.textContent = "Not logged in";
+    mState.textContent = "Not logged in — viewing demo data"; mUser.textContent = "Guest";
+    mEmail.classList.add("hidden"); mLogin.classList.remove("hidden"); mLogout.classList.add("hidden");
+    return;
+  }
+  const initials = esc((user.name || "U").split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase());
+  av.innerHTML = user.avatar ? '<img src="' + esc(user.avatar) + '" class="w-8 h-8 rounded-full" alt="">' : initials;
+  av.className = "w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[13px] font-bold overflow-hidden";
+  nm.textContent = user.name || "My account";
+  sb.textContent = "Logged in via " + (user.provider === "facebook" ? "Facebook" : user.provider === "google" ? "Google" : user.provider);
+  mState.textContent = "Signed in"; mUser.textContent = user.name || "My account";
+  if (user.email){ mEmail.textContent = user.email; mEmail.classList.remove("hidden"); }
+  mLogin.classList.add("hidden"); mLogout.classList.remove("hidden");
+  mLogout.onclick = async () => { await fetch("/auth/logout", { method: "POST" }); location.reload(); };
+}
 async function initAuth(){
   const area = document.getElementById("auth-area");
   const sec = document.getElementById("accounts");
   try {
     const me = await (await fetch("/api/me")).json();
+    setProfileUI(me.user || null);
     if (!me.user){
       area.innerHTML =
         '<a href="/auth/facebook/login" class="h-9 px-3.5 rounded-lg bg-[#1877F2] text-white text-[13px] font-semibold flex items-center hover:opacity-90 transition">Facebook login</a>' +
