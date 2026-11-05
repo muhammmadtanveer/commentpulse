@@ -775,10 +775,13 @@ document.getElementById("btn-reset").addEventListener("click", async () => {
   render(await r.json(), "Demo data — Paws & Shine Grooming (fictional)");
 });
 
-fetch("/api/meta/status").then(r => r.json()).then(s => {
-  document.getElementById("meta-status").textContent = s.configured
-    ? "Meta token configured — live fetching is available."
-    : "Not connected yet — dashboard runs in Demo Mode. (Token setup is a server environment step.)";
+fetch("/api/meta/status").then(r => r.json()).then(async s => {
+  const el = document.getElementById("meta-status");
+  let fb = false;
+  try { fb = (await (await fetch("/api/me")).json()).facebook_connected; } catch(e) {}
+  if (fb) el.textContent = "Connected via Facebook login — your Pages are listed under \u201CMy connected accounts\u201D above, with one-click analysis.";
+  else if (s.configured) el.textContent = "Meta token configured on the server — live fetching is available. Or log in with Facebook for your Pages.";
+  else el.textContent = "Not logged in — dashboard shows demo data. Log in with Facebook (top right) to analyse your own Pages, or use paste / CSV / URL.";
 }).catch(() => { document.getElementById("meta-status").textContent = "Status check failed."; });
 
 /* ---------- accounts: login, pages, posts, history, URL fetch ---------- */
