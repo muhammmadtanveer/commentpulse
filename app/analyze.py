@@ -169,6 +169,7 @@ def analyze(comments):
         return {
             "meta": {"total_comments": 0, "platforms": {}, "date_range": None,
                      "avg_sentiment": 0.0, "sample_note": "No comments supplied."},
+            "comments": [],
             "sentiment": _split_sentiment(Counter(), 0),
             "topics": [], "overlap": [],
             "gist": {"headline": "No comments to analyse.", "bullets": [], "text": "No comments to analyse."},
@@ -342,6 +343,22 @@ def analyze(comments):
         sample_note = ("Small sample: fewer than 20 comments — clusters are thin, "
                        "treat results as indicative only.")
 
+    # ---- Per-comment rows (for the dashboard table / volume chart) ----
+    topic_label_by_id = {t["id"]: t["label"] for t in topics}
+    comments_out = []
+    for i in range(total):
+        ts = timestamps[i]
+        comments_out.append({
+            "id": i + 1,
+            "text": originals[i],
+            "author": raw[i].get("author") or "unknown",
+            "platform": str(raw[i].get("platform") or "unknown").lower(),
+            "timestamp": ts.isoformat() if ts is not None else raw[i].get("timestamp"),
+            "sentiment": _sentiment_bucket(compounds[i]),
+            "sentiment_score": round(float(compounds[i]), 3),
+            "topic": topic_label_by_id.get(cluster_of[i], "General comments"),
+        })
+
     return {
         "meta": {
             "total_comments": total,
@@ -356,6 +373,7 @@ def analyze(comments):
         "overlap": overlap,
         "gist": gist,
         "predictions": predictions,
+        "comments": comments_out,
     }
 
 

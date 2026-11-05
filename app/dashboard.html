@@ -4,157 +4,577 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CommentPulse — Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', dark:'#4338ca' } }, fontFamily: { sans: ['Inter','-apple-system','Segoe UI','Roboto','Arial','sans-serif'] } } } };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
-  :root { --ink:#1d2733; --muted:#5b6b7c; --accent:#e4572e; --good:#2e933c; --bad:#c1292e; --card:#ffffff; --bg:#f2f5f8; }
-  * { box-sizing:border-box; }
-  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
-  header { background:var(--ink); color:#fff; padding:18px 28px; }
-  header h1 { margin:0; font-size:24px; }
-  header p { margin:4px 0 0; color:#c8d3de; font-size:14px; }
-  main { max-width:980px; margin:0 auto; padding:20px 16px 48px; }
-  .cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-  .stat { background:var(--card); border-radius:10px; padding:14px 18px; flex:1 1 180px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-  .stat .num { font-size:28px; font-weight:700; }
-  .stat .cap { color:var(--muted); font-size:13px; }
-  section { background:var(--card); border-radius:10px; padding:18px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-  section h2 { margin:0 0 12px; font-size:18px; }
-  .topic { margin-bottom:14px; }
-  .topic .row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px; }
-  .bar { height:14px; background:#e4eaf0; border-radius:7px; overflow:hidden; }
-  .bar > div { height:100%; background:var(--accent); border-radius:7px; }
-  .terms { color:var(--muted); font-size:12px; margin-top:3px; }
-  .sent { font-size:12px; color:var(--muted); margin-top:2px; }
-  .ex { font-size:13px; font-style:italic; color:#33475c; margin:3px 0 0 10px; }
-  .pos { color:var(--good); } .neg { color:var(--bad); }
-  .gist { font-size:15px; line-height:1.55; }
+  body { font-family:'Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif; }
+  .card { background:#fff; border:1px solid #e4e4e7; border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.05); transition:box-shadow .2s ease, transform .2s ease; }
+  .card:hover { box-shadow:0 6px 16px rgba(16,24,40,.08); }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:9px; color:#3f3f46; font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; transition:background .15s ease,color .15s ease; }
+  .nav-item:hover { background:#f4f4f5; }
+  .nav-item.active { background:#eef2ff; color:#4f46e5; }
+  .nav-item svg { flex:0 0 auto; }
+  #sidebar { transition:width .22s ease; }
+  #sidebar.collapsed { width:76px !important; }
+  #sidebar.collapsed .nav-label, #sidebar.collapsed .brand-text, #sidebar.collapsed .side-foot { display:none; }
+  .pill { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:2px 10px; border-radius:999px; }
+  .pill-pos { background:#dcfce7; color:#166534; }
+  .pill-neu { background:#fef3c7; color:#92400e; }
+  .pill-neg { background:#fee2e2; color:#991b1b; }
   .est { display:inline-block; background:#fff3cd; color:#856404; border:1px solid #ffe08a; border-radius:4px; font-size:11px; font-weight:700; padding:1px 6px; margin-left:6px; vertical-align:middle; }
-  ul { margin:6px 0 6px 18px; padding:0; }
-  li { margin-bottom:8px; font-size:14px; line-height:1.45; }
-  .split { display:flex; height:22px; border-radius:6px; overflow:hidden; margin-top:6px; }
-  .split .p { background:var(--good); } .split .n { background:#aebac6; } .split .g { background:var(--bad); }
-  .legend { font-size:13px; color:var(--muted); margin-top:6px; }
-  #status { color:var(--muted); font-size:14px; }
-  @media print { body { background:#fff; } section, .stat { box-shadow:none; border:1px solid #ddd; } header { background:#fff; color:#000; } header p { color:#444; } }
+  .skel { background:linear-gradient(90deg,#f4f4f5 25%,#e4e4e7 50%,#f4f4f5 75%); background-size:200% 100%; animation:shimmer 1.3s infinite; border-radius:10px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .dropdown { display:none; }
+  .dropdown.open { display:block; }
+  .bar-track { height:10px; background:#f1f1f4; border-radius:6px; overflow:hidden; }
+  .bar-fill { height:100%; background:#4f46e5; border-radius:6px; transition:width .5s ease; }
+  select, input[type="search"], input[type="text"] { outline:none; }
+  select:focus, input:focus { border-color:#4f46e5 !important; box-shadow:0 0 0 3px rgba(79,70,229,.15); }
+  .page-btn { min-width:32px; height:32px; padding:0 8px; border:1px solid #e4e4e7; border-radius:8px; font-size:13px; background:#fff; cursor:pointer; }
+  .page-btn:hover { background:#f4f4f5; }
+  .page-btn.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+  .page-btn:disabled { opacity:.4; cursor:default; }
+  ::-webkit-scrollbar { width:8px; height:8px; } ::-webkit-scrollbar-thumb { background:#d4d4d8; border-radius:8px; }
 </style>
 </head>
-<body>
-<header>
-  <h1>CommentPulse</h1>
-  <p id="subtitle">Comment intelligence — what people are talking about, what keeps repeating, and what is coming next.</p>
-</header>
-<main>
-  <p id="status">Loading demo analysis…</p>
-  <div id="app" style="display:none">
-    <div class="cards">
-      <div class="stat"><div class="num" id="stat-total">–</div><div class="cap">Total comments analysed</div></div>
-      <div class="stat"><div class="num" id="stat-topics">–</div><div class="cap">Topics found</div></div>
-      <div class="stat"><div class="num" id="stat-sent">–</div><div class="cap">Average sentiment (−1 to +1)</div></div>
-      <div class="stat"><div class="num" id="stat-repeat">–</div><div class="cap">Comments in repeated themes</div></div>
+<body class="bg-zinc-100 text-zinc-900">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar" class="w-60 shrink-0 bg-white border-r border-zinc-200 flex flex-col sticky top-0 h-screen z-20">
+    <div class="flex items-center gap-3 px-5 h-16 border-b border-zinc-100">
+      <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center text-white shrink-0">
+        <i data-lucide="audio-waveform" class="w-5 h-5"></i>
+      </div>
+      <div class="brand-text">
+        <div class="font-extrabold text-[17px] leading-tight">CommentPulse</div>
+        <div class="text-[11px] text-zinc-500 leading-tight">by UpSkillz Solutions</div>
+      </div>
     </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <div class="nav-item active" data-nav="top"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="nav-label">Dashboard</span></div>
+      <div class="nav-item" data-nav="analytics"><i data-lucide="chart-line" class="w-5 h-5"></i><span class="nav-label">Analytics</span></div>
+      <div class="nav-item" data-nav="topics"><i data-lucide="tags" class="w-5 h-5"></i><span class="nav-label">Topics</span></div>
+      <div class="nav-item" data-nav="predictions"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="nav-label">Predictions</span></div>
+      <div class="nav-item" data-nav="comments"><i data-lucide="message-square-text" class="w-5 h-5"></i><span class="nav-label">Comments</span></div>
+      <div class="nav-item" data-nav="settings"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-label">Import &amp; Settings</span></div>
+      <div class="nav-item" data-nav="help"><i data-lucide="circle-help" class="w-5 h-5"></i><span class="nav-label">Help</span></div>
+    </nav>
+    <div class="p-3 border-t border-zinc-100">
+      <div class="side-foot rounded-lg bg-indigo-50 text-indigo-900 text-[12px] leading-snug px-3 py-2.5 mb-2">
+        <strong>Demo Mode</strong><br>Sample data: Paws &amp; Shine Grooming (fictional). Connect Meta for live data.
+      </div>
+      <button id="collapse-btn" class="nav-item w-full"><i data-lucide="panel-left-close" class="w-5 h-5"></i><span class="nav-label">Collapse</span></button>
+    </div>
+  </aside>
 
-    <section>
-      <h2>Sentiment split</h2>
-      <div class="split" id="sent-split"></div>
-      <div class="legend" id="sent-legend"></div>
-    </section>
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 min-w-0 flex flex-col">
 
-    <section>
-      <h2>Lub-e-lubab — the gist</h2>
-      <div class="gist" id="gist"></div>
-    </section>
+    <!-- Header -->
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-zinc-200">
+      <div class="flex items-center gap-3 px-4 sm:px-6 h-16">
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4.5 h-4.5 w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"></i>
+          <input id="global-search" type="search" placeholder="Search comments, authors, topics…"
+                 class="w-full h-10 pl-10 pr-3 rounded-lg border border-zinc-200 bg-zinc-50 text-sm transition">
+        </div>
+        <div class="hidden md:flex items-center gap-2 ml-auto">
+          <i data-lucide="calendar-range" class="w-5 h-5 text-zinc-400"></i>
+          <select id="range-picker" class="h-10 rounded-lg border border-zinc-200 bg-white text-sm px-2 transition">
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+        </div>
+        <div class="relative ml-auto md:ml-0">
+          <button id="bell-btn" class="relative w-10 h-10 rounded-lg border border-zinc-200 bg-white flex items-center justify-center hover:bg-zinc-50 transition">
+            <i data-lucide="bell" class="w-5 h-5 text-zinc-600"></i>
+            <span id="bell-dot" class="hidden absolute top-2 right-2.5 w-2 h-2 rounded-full bg-red-500"></span>
+          </button>
+          <div id="bell-menu" class="dropdown absolute right-0 mt-2 w-80 card p-2 z-30">
+            <div class="px-2 py-1.5 text-[13px] font-semibold text-zinc-700">What needs attention</div>
+            <div id="bell-items" class="text-sm"></div>
+          </div>
+        </div>
+        <div class="relative">
+          <button id="profile-btn" class="flex items-center gap-2.5 h-10 pl-1 pr-2 rounded-lg hover:bg-zinc-50 transition">
+            <span class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[13px] font-bold">PS</span>
+            <span class="hidden sm:block text-left leading-tight">
+              <span class="block text-[13px] font-semibold">Paws &amp; Shine</span>
+              <span class="block text-[11px] text-zinc-500">Sample business · Demo</span>
+            </span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400"></i>
+          </button>
+          <div id="profile-menu" class="dropdown absolute right-0 mt-2 w-60 card p-2 z-30 text-sm">
+            <div class="px-2 py-1.5 text-zinc-500 text-[12px]">Signed in for analysis of</div>
+            <div class="px-2 pb-1.5 font-semibold">Paws &amp; Shine Grooming</div>
+            <div class="border-t border-zinc-100 my-1"></div>
+            <a class="nav-item" href="/report/demo" target="_blank" rel="noopener"><i data-lucide="file-text" class="w-4 h-4"></i><span>Printable report</span></a>
+            <a class="nav-item" href="/api/demo/whatsapp" target="_blank" rel="noopener"><i data-lucide="message-circle" class="w-4 h-4"></i><span>WhatsApp summary</span></a>
+            <div class="nav-item" data-nav="settings"><i data-lucide="upload" class="w-4 h-4"></i><span>Import my own comments</span></div>
+          </div>
+        </div>
+      </div>
+    </header>
 
-    <section>
-      <h2>Topics discussed</h2>
-      <div id="topics"></div>
-    </section>
+    <main class="px-4 sm:px-6 py-6 space-y-5 max-w-[1200px] w-full mx-auto" id="top">
 
-    <section>
-      <h2>Overlap — what keeps repeating</h2>
-      <div id="overlap"></div>
-    </section>
+      <!-- Loading state -->
+      <div id="loading">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+          <div class="skel h-[104px]"></div><div class="skel h-[104px]"></div><div class="skel h-[104px]"></div><div class="skel h-[104px]"></div>
+        </div>
+        <div class="skel h-[320px] mb-5"></div>
+        <div class="skel h-[220px]"></div>
+        <p class="text-sm text-zinc-500 mt-4 flex items-center gap-2"><i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i> Loading analysis…</p>
+      </div>
 
-    <section>
-      <h2>Predictions</h2>
-      <div id="predictions"></div>
-    </section>
+      <div id="app" class="hidden space-y-5">
 
-    <p class="legend" id="meta-note"></p>
+        <!-- KPI cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="card p-5">
+            <div class="flex items-start justify-between">
+              <div class="text-[13px] font-medium text-zinc-500">Total Comments</div>
+              <span class="w-8 h-8 rounded-lg bg-indigo-50 text-accent flex items-center justify-center"><i data-lucide="messages-square" class="w-4.5 h-4.5 w-5 h-5"></i></span>
+            </div>
+            <div class="text-[30px] font-extrabold leading-tight mt-1" id="kpi-total">–</div>
+            <div class="text-[12.5px] mt-1" id="kpi-total-trend">–</div>
+          </div>
+          <div class="card p-5">
+            <div class="flex items-start justify-between">
+              <div class="text-[13px] font-medium text-zinc-500">Topics Found</div>
+              <span class="w-8 h-8 rounded-lg bg-indigo-50 text-accent flex items-center justify-center"><i data-lucide="tags" class="w-5 h-5"></i></span>
+            </div>
+            <div class="text-[30px] font-extrabold leading-tight mt-1" id="kpi-topics">–</div>
+            <div class="text-[12.5px] mt-1 text-zinc-500" id="kpi-topics-sub">–</div>
+          </div>
+          <div class="card p-5">
+            <div class="flex items-start justify-between">
+              <div class="text-[13px] font-medium text-zinc-500">Avg Sentiment</div>
+              <span class="w-8 h-8 rounded-lg bg-indigo-50 text-accent flex items-center justify-center"><i data-lucide="heart-pulse" class="w-5 h-5"></i></span>
+            </div>
+            <div class="text-[30px] font-extrabold leading-tight mt-1" id="kpi-sent">–</div>
+            <div class="text-[12.5px] mt-1" id="kpi-sent-trend">–</div>
+          </div>
+          <div class="card p-5">
+            <div class="flex items-start justify-between">
+              <div class="text-[13px] font-medium text-zinc-500">Repeated Questions</div>
+              <span class="w-8 h-8 rounded-lg bg-indigo-50 text-accent flex items-center justify-center"><i data-lucide="repeat-2" class="w-5 h-5"></i></span>
+            </div>
+            <div class="text-[30px] font-extrabold leading-tight mt-1" id="kpi-repeat">–</div>
+            <div class="text-[12.5px] mt-1 text-zinc-500" id="kpi-repeat-sub">–</div>
+          </div>
+        </section>
+
+        <!-- Gist -->
+        <section class="card p-5 sm:p-6">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-accent"></i> Lub-e-lubab — the gist</h2>
+          <div id="gist" class="mt-2 text-[14.5px] leading-relaxed text-zinc-700"></div>
+        </section>
+
+        <!-- Charts -->
+        <section id="analytics" class="grid grid-cols-1 xl:grid-cols-3 gap-4 scroll-mt-24">
+          <div class="card p-5 xl:col-span-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <h2 class="text-[16px] font-bold">Comment volume</h2>
+              <span class="text-[12px] text-zinc-500" id="volume-note">per day · follows the date range</span>
+            </div>
+            <div class="h-[280px] mt-3"><canvas id="volume-chart"></canvas></div>
+          </div>
+          <div class="card p-5">
+            <h2 class="text-[16px] font-bold">Comments by topic</h2>
+            <div class="h-[280px] mt-3 flex items-center justify-center"><canvas id="topic-chart"></canvas></div>
+          </div>
+        </section>
+
+        <!-- Sentiment + Topics -->
+        <section id="topics" class="grid grid-cols-1 xl:grid-cols-3 gap-4 scroll-mt-24">
+          <div class="card p-5">
+            <h2 class="text-[16px] font-bold">Sentiment split</h2>
+            <div class="flex h-[22px] rounded-md overflow-hidden mt-4" id="sent-split"></div>
+            <div class="text-[13px] text-zinc-500 mt-2.5 leading-relaxed" id="sent-legend"></div>
+            <h3 class="text-[14px] font-bold mt-6 mb-2">Overlap — what keeps repeating</h3>
+            <div id="overlap" class="text-[13.5px]"></div>
+          </div>
+          <div class="card p-5 xl:col-span-2">
+            <h2 class="text-[16px] font-bold">Topics discussed</h2>
+            <div id="topics-list" class="mt-3 space-y-4"></div>
+          </div>
+        </section>
+
+        <!-- Predictions -->
+        <section id="predictions" class="card p-5 sm:p-6 scroll-mt-24">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-accent"></i> Predictions <span class="est" style="margin-left:0">ESTIMATES — based on the patterns stated</span></h2>
+          <div id="predictions-body" class="mt-2 text-[14.5px] leading-relaxed"></div>
+        </section>
+
+        <!-- Comments table -->
+        <section id="comments" class="card scroll-mt-24 overflow-hidden">
+          <div class="p-5 pb-3 flex items-center justify-between flex-wrap gap-3">
+            <h2 class="text-[16px] font-bold">Recent comments</h2>
+            <span class="text-[12.5px] text-zinc-500" id="table-count"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[760px]">
+              <thead>
+                <tr class="text-left text-[12px] uppercase tracking-wide text-zinc-500 border-y border-zinc-100 bg-zinc-50">
+                  <th class="px-5 py-3 font-semibold w-[52px]">ID</th>
+                  <th class="px-3 py-3 font-semibold w-[130px]">Author</th>
+                  <th class="px-3 py-3 font-semibold">Comment</th>
+                  <th class="px-3 py-3 font-semibold w-[110px]">Platform</th>
+                  <th class="px-3 py-3 font-semibold w-[120px]">Topic</th>
+                  <th class="px-3 py-3 font-semibold w-[118px]">Sentiment</th>
+                  <th class="px-5 py-3 font-semibold w-[110px]">Date</th>
+                </tr>
+              </thead>
+              <tbody id="comments-body"></tbody>
+            </table>
+          </div>
+          <div id="table-empty" class="hidden py-12 text-center">
+            <i data-lucide="inbox" class="w-10 h-10 text-zinc-300 mx-auto"></i>
+            <p class="text-sm text-zinc-500 mt-2">No comments match your search / date range.</p>
+          </div>
+          <div class="px-5 py-3.5 border-t border-zinc-100 flex items-center justify-between flex-wrap gap-3">
+            <span class="text-[12.5px] text-zinc-500" id="page-info"></span>
+            <div class="flex items-center gap-1.5" id="pagination"></div>
+          </div>
+        </section>
+
+        <!-- Import & Settings -->
+        <section id="settings" class="card p-5 sm:p-6 scroll-mt-24">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 text-accent"></i> Import &amp; Settings</h2>
+          <p class="text-[13.5px] text-zinc-600 mt-2 leading-relaxed">Analyse your own comments: upload a CSV with columns <code class="bg-zinc-100 px-1.5 py-0.5 rounded text-[12.5px]">text,timestamp,platform,author</code> — the whole dashboard re-renders with your data. Nothing is uploaded anywhere except this server.</p>
+          <div class="flex items-center gap-3 mt-3 flex-wrap">
+            <input id="csv-file" type="file" accept=".csv" class="text-sm">
+            <button id="csv-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Analyse CSV</button>
+            <span id="csv-status" class="text-[13px] text-zinc-500"></span>
+          </div>
+          <div class="border-t border-zinc-100 mt-5 pt-4 grid sm:grid-cols-2 gap-4 text-[13.5px]">
+            <div>
+              <div class="font-semibold mb-1">Meta (Facebook / Instagram) live data</div>
+              <p class="text-zinc-600" id="meta-status">Checking…</p>
+            </div>
+            <div>
+              <div class="font-semibold mb-1">Method</div>
+              <p class="text-zinc-600" id="meta-note"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Help -->
+        <section id="help" class="card p-5 sm:p-6 scroll-mt-24">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="circle-help" class="w-5 h-5 text-accent"></i> Help — how to read this</h2>
+          <ul class="mt-2 text-[13.5px] text-zinc-600 leading-relaxed list-disc pl-5 space-y-1.5">
+            <li><strong>Topics</strong> are computed by clustering your actual comments — the top terms are shown so you can check the label.</li>
+            <li><strong>Overlap</strong> = near-duplicate comments. A question asked 9 times is demand, not noise — answer it once, publicly.</li>
+            <li><strong>Predictions</strong> are trend-based estimates from this data, always labelled ESTIMATE — never facts.</li>
+            <li>Under 20 comments the clusters are thin; the report says so when that happens.</li>
+          </ul>
+        </section>
+
+      </div><!-- /app -->
+    </main>
   </div>
-</main>
+</div>
+
 <script>
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function icon(name, cls){ return '<i data-lucide="'+name+'" class="'+(cls||'w-4 h-4')+'"></i>'; }
+function refreshIcons(){ if (window.lucide) lucide.createIcons(); }
 
-fetch("/api/demo").then(r => r.json()).then(a => {
-  document.getElementById("status").style.display = "none";
-  document.getElementById("app").style.display = "block";
+const PAGE_SIZE = 8;
+let A = null;              // current analysis
+let page = 1;
+let volumeChart = null, topicChart = null;
 
+/* ---------- filtering ---------- */
+function filteredComments(){
+  if (!A) return [];
+  const q = document.getElementById("global-search").value.trim().toLowerCase();
+  const range = document.getElementById("range-picker").value;
+  let rows = (A.comments || []).slice();
+  if (range !== "all" && rows.length){
+    const maxTs = Math.max.apply(null, rows.map(c => Date.parse(c.timestamp || "") || 0));
+    const days = parseInt(range, 10);
+    const from = maxTs - days * 86400000;
+    rows = rows.filter(c => (Date.parse(c.timestamp || "") || 0) >= from - 86400000);
+  }
+  if (q){
+    rows = rows.filter(c => (c.text+" "+c.author+" "+c.topic+" "+c.platform).toLowerCase().includes(q));
+  }
+  rows.sort((a,b) => (Date.parse(b.timestamp||"")||0) - (Date.parse(a.timestamp||"")||0));
+  return rows;
+}
+
+/* ---------- charts ---------- */
+function renderVolumeChart(){
+  const rows = filteredComments();
+  const byDay = {};
+  rows.forEach(c => { const d = (c.timestamp||"").slice(0,10); if (d) byDay[d] = (byDay[d]||0)+1; });
+  const days = Object.keys(byDay).sort();
+  const ctx = document.getElementById("volume-chart");
+  if (volumeChart) volumeChart.destroy();
+  volumeChart = new Chart(ctx, {
+    type: "line",
+    data: { labels: days.map(d => d.slice(5)), datasets: [{
+      label: "Comments", data: days.map(d => byDay[d]),
+      borderColor: "#4f46e5", backgroundColor: "rgba(79,70,229,.14)",
+      fill: true, tension: .35, pointRadius: 2.5, pointBackgroundColor: "#4f46e5", borderWidth: 2
+    }]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#f1f1f4" } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } } } }
+  });
+  document.getElementById("volume-note").textContent =
+    days.length ? ("per day · " + days[0] + " → " + days[days.length-1]) : "no dated comments in range";
+}
+
+const TOPIC_COLORS = ["#4f46e5","#06b6d4","#f59e0b","#10b981","#ef4444","#8b5cf6","#ec4899","#64748b","#84cc16","#f97316"];
+function renderTopicChart(){
+  const ctx = document.getElementById("topic-chart");
+  if (topicChart) topicChart.destroy();
+  topicChart = new Chart(ctx, {
+    type: "doughnut",
+    data: { labels: A.topics.map(t => t.label), datasets: [{
+      data: A.topics.map(t => t.count),
+      backgroundColor: A.topics.map((_,i) => TOPIC_COLORS[i % TOPIC_COLORS.length]),
+      borderWidth: 2, borderColor: "#fff"
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, cutout: "58%",
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } } }
+  });
+}
+
+/* ---------- table ---------- */
+function pill(sent){
+  if (sent === "positive") return '<span class="pill pill-pos">'+icon("arrow-up-right","w-3.5 h-3.5")+'Positive</span>';
+  if (sent === "negative") return '<span class="pill pill-neg">'+icon("arrow-down-right","w-3.5 h-3.5")+'Negative</span>';
+  return '<span class="pill pill-neu">'+icon("minus","w-3.5 h-3.5")+'Neutral</span>';
+}
+function renderTable(){
+  const rows = filteredComments();
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if (page > totalPages) page = totalPages;
+  const start = (page-1) * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
+  document.getElementById("comments-body").innerHTML = slice.map(c =>
+    '<tr class="border-b border-zinc-50 hover:bg-zinc-50 transition">' +
+    '<td class="px-5 py-3 text-zinc-400">'+c.id+'</td>' +
+    '<td class="px-3 py-3 font-medium">'+esc(c.author)+'</td>' +
+    '<td class="px-3 py-3 text-zinc-700">'+esc(c.text)+'</td>' +
+    '<td class="px-3 py-3 capitalize text-zinc-500">'+esc(c.platform)+'</td>' +
+    '<td class="px-3 py-3 text-zinc-500">'+esc(c.topic)+'</td>' +
+    '<td class="px-3 py-3">'+pill(c.sentiment)+'</td>' +
+    '<td class="px-5 py-3 text-zinc-500 whitespace-nowrap">'+esc((c.timestamp||"").slice(0,10))+'</td></tr>'
+  ).join("");
+  document.getElementById("table-empty").classList.toggle("hidden", rows.length > 0);
+  document.getElementById("table-count").textContent = rows.length + " comments shown";
+  document.getElementById("page-info").textContent = rows.length ?
+    ("Showing " + (start+1) + "–" + Math.min(start+PAGE_SIZE, rows.length) + " of " + rows.length) : "Nothing to show";
+  let btns = '<button class="page-btn" id="pg-prev" '+(page<=1?"disabled":"")+'>‹ Prev</button>';
+  for (let i=1; i<=totalPages; i++){
+    if (totalPages > 7 && i > 2 && i < totalPages-1 && Math.abs(i-page) > 1) { if (!btns.endsWith("…")) btns += '<span class="px-1 text-zinc-400">…</span>'; continue; }
+    btns += '<button class="page-btn pg-num '+(i===page?"active":"")+'" data-pg="'+i+'">'+i+'</button>';
+  }
+  btns += '<button class="page-btn" id="pg-next" '+(page>=totalPages?"disabled":"")+'>Next ›</button>';
+  document.getElementById("pagination").innerHTML = btns;
+  const prev = document.getElementById("pg-prev"), next = document.getElementById("pg-next");
+  if (prev) prev.onclick = () => { page--; renderTable(); };
+  if (next) next.onclick = () => { page++; renderTable(); };
+  document.querySelectorAll(".pg-num").forEach(b => b.onclick = () => { page = parseInt(b.dataset.pg,10); renderTable(); });
+  refreshIcons();
+}
+function refreshDataViews(){ page = 1; renderVolumeChart(); renderTable(); }
+
+/* ---------- notifications (computed from the analysis) ---------- */
+function renderBell(){
+  const items = [];
+  const p = A.predictions || {};
+  (p.rising_topics||[]).forEach(r => items.push({icon:"trending-up", cls:"text-indigo-600 bg-indigo-50",
+    html:"<strong>Rising topic:</strong> "+esc(r.topic)+" (+"+r.change_points+" pts) — ESTIMATE"}));
+  if (A.overlap && A.overlap.length) items.push({icon:"repeat-2", cls:"text-amber-600 bg-amber-50",
+    html:"<strong>Most repeated:</strong> "+esc(A.overlap[0].theme)+" — "+A.overlap[0].count+" comments"} );
+  if (A.sentiment.negative.pct >= 10) items.push({icon:"triangle-alert", cls:"text-red-600 bg-red-50",
+    html:"<strong>"+A.sentiment.negative.pct+"% negative</strong> — check the complaints theme"} );
+  if (!items.length) items.push({icon:"check", cls:"text-emerald-600 bg-emerald-50", html:"Nothing needs attention right now."});
+  document.getElementById("bell-items").innerHTML = items.map(it =>
+    '<div class="flex gap-2.5 px-2 py-2 rounded-lg hover:bg-zinc-50"><span class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 '+it.cls+'">'+icon(it.icon,"w-4 h-4")+'</span><span class="leading-snug">'+it.html+'</span></div>').join("");
+  document.getElementById("bell-dot").classList.toggle("hidden", !(p.rising_topics||[]).length && A.sentiment.negative.pct < 10);
+}
+
+/* ---------- full render ---------- */
+function trendHtml(diffPct, invert){
+  if (diffPct === null || diffPct === undefined) return '<span class="text-zinc-400">not enough dated data</span>';
+  const good = invert ? diffPct < 0 : diffPct > 0;
+  const flat = Math.abs(diffPct) < 0.05;
+  const cls = flat ? "text-zinc-500" : (good ? "text-emerald-600" : "text-red-500");
+  const ic = flat ? "minus" : (diffPct > 0 ? "arrow-up-right" : "arrow-down-right");
+  return '<span class="'+cls+' font-semibold inline-flex items-center gap-0.5">'+icon(ic,"w-3.5 h-3.5")+
+    (diffPct>0?"+":"")+(Math.round(diffPct*10)/10)+'%</span> <span class="text-zinc-500">vs previous half of the period</span>';
+}
+
+function render(a){
+  A = a;
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").classList.remove("hidden");
+
+  /* KPIs */
   const repCount = a.overlap.reduce((s,o)=>s+o.count,0);
-  document.getElementById("stat-total").textContent = a.meta.total_comments;
-  document.getElementById("stat-topics").textContent = a.topics.length;
-  document.getElementById("stat-sent").textContent = a.meta.avg_sentiment;
-  document.getElementById("stat-repeat").textContent = repCount;
+  document.getElementById("kpi-total").textContent = a.meta.total_comments;
+  document.getElementById("kpi-topics").textContent = a.topics.length;
+  document.getElementById("kpi-sent").textContent = a.meta.avg_sentiment;
+  document.getElementById("kpi-repeat").textContent = repCount;
 
+  /* volume trend: first half vs second half of the dated timeline */
+  const dated = (a.comments||[]).map(c => Date.parse(c.timestamp||"")).filter(t => !isNaN(t)).sort((x,y)=>x-y);
+  let volTrend = null;
+  if (dated.length >= 10){
+    const mid = dated[Math.floor(dated.length/2)];
+    const first = dated.filter(t => t < mid).length, second = dated.length - first;
+    if (first > 0) volTrend = (second - first) / first * 100;
+  }
+  document.getElementById("kpi-total-trend").innerHTML = trendHtml(volTrend, false);
+  document.getElementById("kpi-topics-sub").textContent = a.topics.length ?
+    "biggest: " + a.topics[0].label + " (" + a.topics[0].share_pct + "%)" : "no topics yet";
+  const sd = a.predictions.sentiment_direction;
+  document.getElementById("kpi-sent-trend").innerHTML = sd ?
+    trendHtml(sd.change === 0 ? 0 : (sd.change / Math.max(Math.abs(sd.first_half_avg), 0.001) * 100), false).replace("vs previous half of the period","sentiment trend: "+esc(sd.direction)+" (ESTIMATE)") :
+    '<span class="text-zinc-400">not enough dated data</span>';
+  document.getElementById("kpi-repeat-sub").textContent = a.meta.total_comments ?
+    repCount + " of " + a.meta.total_comments + " comments (" + Math.round(repCount/a.meta.total_comments*100) + "%) sit in repeated themes" : "";
+
+  /* Gist */
+  const g = a.gist;
+  document.getElementById("gist").innerHTML =
+    "<p><strong>" + esc(g.headline) + "</strong></p><ul class='list-disc pl-5 mt-1.5 space-y-1'>" +
+    g.bullets.map(b => "<li>" + esc(b) + "</li>").join("") + "</ul>";
+
+  /* Sentiment split */
   const s = a.sentiment;
   document.getElementById("sent-split").innerHTML =
-    '<div class="p" style="width:'+s.positive.pct+'%"></div>' +
-    '<div class="n" style="width:'+s.neutral.pct+'%"></div>' +
-    '<div class="g" style="width:'+s.negative.pct+'%"></div>';
+    '<div style="width:'+s.positive.pct+'%;background:#22c55e"></div>' +
+    '<div style="width:'+s.neutral.pct+'%;background:#d4d4d8"></div>' +
+    '<div style="width:'+s.negative.pct+'%;background:#ef4444"></div>';
   document.getElementById("sent-legend").textContent =
     "Positive " + s.positive.count + " (" + s.positive.pct + "%) · Neutral " +
     s.neutral.count + " (" + s.neutral.pct + "%) · Negative " +
     s.negative.count + " (" + s.negative.pct + "%)";
 
-  const g = a.gist;
-  document.getElementById("gist").innerHTML =
-    "<p><strong>" + esc(g.headline) + "</strong></p><ul>" +
-    g.bullets.map(b => "<li>" + esc(b) + "</li>").join("") + "</ul>";
+  /* Overlap */
+  document.getElementById("overlap").innerHTML = a.overlap.length ? "<ul class='space-y-2'>" + a.overlap.map(o =>
+    "<li><strong>" + esc(o.theme) + "</strong> — " + o.count + " comments (" + o.share_pct + "%)" +
+    '<br><span class="italic text-zinc-500">“' + esc(o.representative) + '”</span></li>').join("") + "</ul>"
+    : "<p class='text-zinc-500'>No repeated themes found.</p>";
 
-  document.getElementById("topics").innerHTML = a.topics.map(t =>
-    '<div class="topic"><div class="row"><strong>' + esc(t.label) + '</strong><span>' +
+  /* Topics */
+  document.getElementById("topics-list").innerHTML = a.topics.map((t,i) =>
+    '<div><div class="flex justify-between text-[13.5px]"><strong>'+esc(t.label)+'</strong><span class="text-zinc-500">' +
     t.count + " comments · " + t.share_pct + '%</span></div>' +
-    '<div class="bar"><div style="width:' + t.share_pct + '%"></div></div>' +
-    '<div class="terms">Top terms: ' + esc(t.top_terms.join(", ")) + '</div>' +
-    '<div class="sent"><span class="pos">▲ ' + t.sentiment.positive.pct + '% positive</span> · ' +
-    t.sentiment.neutral.pct + '% neutral · <span class="neg">▼ ' + t.sentiment.negative.pct + '% negative</span></div>' +
-    t.examples.map(e => '<p class="ex">“' + esc(e) + '”</p>').join("") +
+    '<div class="bar-track mt-1.5"><div class="bar-fill" style="width:' + t.share_pct + '%;background:' + TOPIC_COLORS[i % TOPIC_COLORS.length] + '"></div></div>' +
+    '<div class="text-[12px] text-zinc-500 mt-1">Top terms: ' + esc(t.top_terms.join(", ")) +
+    ' · <span class="text-emerald-600">' + t.sentiment.positive.pct + '% positive</span> · ' +
+    t.sentiment.neutral.pct + '% neutral · <span class="text-red-500">' + t.sentiment.negative.pct + '% negative</span></div>' +
+    t.examples.map(e => '<p class="text-[13px] italic text-zinc-600 mt-0.5 ml-2">“' + esc(e) + '”</p>').join("") +
     "</div>").join("");
 
-  document.getElementById("overlap").innerHTML = a.overlap.length ? "<ul>" + a.overlap.map(o =>
-    "<li><strong>" + esc(o.theme) + "</strong> — " + o.count + " comments (" + o.share_pct + "%)" +
-    '<br><span class="ex">“' + esc(o.representative) + '”</span></li>').join("") + "</ul>"
-    : "<p>No repeated themes found.</p>";
-
+  /* Predictions */
   const p = a.predictions;
   let ph = "";
   if (p.rising_topics && p.rising_topics.length) {
-    ph += "<p><strong>Rising topics</strong><span class='est'>ESTIMATE</span></p><ul>" +
+    ph += "<p class='mt-2'><strong>Rising topics</strong><span class='est'>ESTIMATE</span></p><ul class='list-disc pl-5 mt-1 space-y-1'>" +
       p.rising_topics.map(r => "<li>" + esc(r.topic) + ": " + r.earlier_share_pct + "% → " +
         r.latest_week_share_pct + "% of comments in the latest week (+" + r.change_points + " pts)</li>").join("") + "</ul>";
   }
   if (p.sentiment_direction) {
-    ph += "<p><strong>Sentiment direction: " + esc(p.sentiment_direction.direction) + "</strong>" +
+    ph += "<p class='mt-3'><strong>Sentiment direction: " + esc(p.sentiment_direction.direction) + "</strong>" +
       "<span class='est'>ESTIMATE</span> — average sentiment " + p.sentiment_direction.first_half_avg +
       " (first half) → " + p.sentiment_direction.second_half_avg + " (second half).</p>";
   }
   if (p.likely_questions && p.likely_questions.length) {
-    ph += "<p><strong>Likely to flood the next post</strong><span class='est'>ESTIMATE</span></p><ul>" +
+    ph += "<p class='mt-3'><strong>Likely to flood the next post</strong><span class='est'>ESTIMATE</span></p><ul class='list-disc pl-5 mt-1 space-y-1'>" +
       p.likely_questions.map(q => "<li>" + esc(q.question_theme) + " — asked " + q.times_asked +
         ' times, e.g. “' + esc(q.representative) + '”</li>').join("") + "</ul>";
   }
   if (p.content_ideas && p.content_ideas.length) {
-    ph += "<p><strong>Content ideas</strong><span class='est'>ESTIMATE</span></p><ul>" +
+    ph += "<p class='mt-3'><strong>Content ideas</strong><span class='est'>ESTIMATE</span></p><ul class='list-disc pl-5 mt-1 space-y-1'>" +
       p.content_ideas.map(c => "<li>" + esc(c.idea) + "</li>").join("") + "</ul>";
   }
-  document.getElementById("predictions").innerHTML = ph || "<p>Not enough data for predictions.</p>";
+  document.getElementById("predictions-body").innerHTML = ph || "<p class='text-zinc-500'>Not enough data for predictions.</p>";
 
+  /* Method note */
   const m = a.meta;
   let note = "Method: " + esc(m.method) + ".";
   if (m.date_range) note += " Comments from " + m.date_range.from + " to " + m.date_range.to + ".";
   if (m.sample_note) note += " " + m.sample_note;
   document.getElementById("meta-note").textContent = note;
-}).catch(err => {
-  document.getElementById("status").textContent = "Could not load demo analysis: " + err;
+
+  renderBell();
+  renderTopicChart();
+  refreshDataViews();
+  refreshIcons();
+}
+
+/* ---------- wiring ---------- */
+document.getElementById("collapse-btn").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.toggle("collapsed");
 });
+document.querySelectorAll("[data-nav]").forEach(el => {
+  el.addEventListener("click", () => {
+    const target = el.dataset.nav;
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n === el));
+    const dest = document.getElementById(target);
+    if (dest) dest.scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+});
+function toggleMenu(id){
+  document.querySelectorAll(".dropdown").forEach(d => { if (d.id !== id) d.classList.remove("open"); });
+  document.getElementById(id).classList.toggle("open");
+}
+document.getElementById("bell-btn").addEventListener("click", e => { e.stopPropagation(); toggleMenu("bell-menu"); });
+document.getElementById("profile-btn").addEventListener("click", e => { e.stopPropagation(); toggleMenu("profile-menu"); });
+document.addEventListener("click", () => document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("open")));
+document.getElementById("global-search").addEventListener("input", () => { if (A) refreshDataViews(); });
+document.getElementById("range-picker").addEventListener("change", () => { if (A) refreshDataViews(); });
+
+document.getElementById("csv-btn").addEventListener("click", async () => {
+  const f = document.getElementById("csv-file").files[0];
+  const st = document.getElementById("csv-status");
+  if (!f) { st.textContent = "Choose a CSV file first."; return; }
+  st.textContent = "Analysing…";
+  try {
+    const fd = new FormData(); fd.append("file", f);
+    const r = await fetch("/api/import/csv", { method: "POST", body: fd });
+    if (!r.ok) throw new Error("server returned " + r.status);
+    const a = await r.json();
+    render(a);
+    st.textContent = "Done — dashboard now shows your CSV (" + a.meta.total_comments + " comments).";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) { st.textContent = "Import failed: " + err.message; }
+});
+
+fetch("/api/meta/status").then(r => r.json()).then(s => {
+  document.getElementById("meta-status").textContent = s.configured
+    ? "Meta token configured — live fetching is available."
+    : "Not connected yet — dashboard runs in Demo Mode. (Token setup is a server environment step.)";
+}).catch(() => { document.getElementById("meta-status").textContent = "Status check failed."; });
+
+fetch("/api/demo").then(r => r.json()).then(render).catch(err => {
+  document.getElementById("loading").innerHTML =
+    '<div class="card p-6 text-sm"><strong>Could not load the analysis.</strong><br><span class="text-zinc-500">' + esc(err.message) + '</span></div>';
+});
+refreshIcons();
 </script>
 </body>
 </html>

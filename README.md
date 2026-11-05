@@ -20,8 +20,9 @@ python3 -m venv .venv
 
 Open http://localhost:8100 — the dashboard loads in Demo Mode and analyses
 the bundled sample dataset (`data/sample_comments.csv`, ~148 comments for a
-**fictional** pet grooming business, "Paws & Shine Grooming"). No internet
-connection or account is needed; the dashboard uses no external assets.
+**fictional** pet grooming business, "Paws & Shine Grooming"). No account is
+needed; the dashboard UI loads Tailwind / Chart.js / Lucide from CDNs, so it
+needs an internet connection to render (the analysis API itself is local).
 
 ## What it computes (all numbers are computed — nothing is invented)
 
