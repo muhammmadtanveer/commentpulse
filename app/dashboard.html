@@ -137,6 +137,32 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
 
     <main class="px-4 sm:px-6 py-6 space-y-5 max-w-[1200px] w-full mx-auto" id="top">
 
+      <!-- Hero -->
+      <section id="hero" class="card overflow-hidden scroll-mt-24" style="background:linear-gradient(130deg,#eef2ff 0%,#ffffff 58%,#fff7ed 135%)">
+        <div class="p-6 sm:p-10 max-w-[840px]">
+          <span class="inline-block rounded-full bg-indigo-100 text-indigo-800 text-[11.5px] font-bold tracking-wide px-3 py-1">COMMENT INTELLIGENCE FOR SMALL TEAMS</span>
+          <h1 class="text-[30px] sm:text-[42px] font-extrabold leading-[1.12] tracking-tight mt-4">Your comments are telling you what customers want. <span class="text-accent">Read them in one minute.</span></h1>
+          <p class="text-[15.5px] text-zinc-600 mt-3 leading-relaxed max-w-[640px]">CommentPulse turns Facebook, Instagram and YouTube comments into topics, repeated questions, buying-intent leads, objections — and what is likely to come next. Connect a Page, or just paste one link.</p>
+          <div class="flex gap-2 mt-6 flex-wrap">
+            <input id="hero-url-input" type="url" placeholder="Paste a YouTube or Reddit post link…" class="h-12 flex-1 min-w-[260px] rounded-xl border border-zinc-300 bg-white text-[15px] px-4 shadow-sm">
+            <button id="hero-url-btn" class="h-12 px-6 rounded-xl bg-accent hover:bg-accent-dark text-white text-[15px] font-bold transition shadow-sm">Analyse free</button>
+          </div>
+          <span id="hero-url-status" class="block text-[13px] text-zinc-500 mt-2"></span>
+          <div class="flex gap-x-5 gap-y-1.5 mt-3 text-[12.5px] text-zinc-500 flex-wrap">
+            <span>Free while in beta</span><span>·</span><span>No credit card</span><span>·</span><span>Read-only — we never post or reply for you</span><span>·</span><span>Any public video — yours or a competitor's</span>
+          </div>
+          <div class="flex gap-2 mt-5 flex-wrap">
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">Facebook Pages</span>
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">Instagram</span>
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">YouTube</span>
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">Reddit</span>
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">Paste comments</span>
+            <span class="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[12.5px] font-medium">CSV upload</span>
+          </div>
+          <p class="text-[13px] mt-4 text-zinc-600">Own a Page? <a href="/auth/facebook/login" class="font-semibold text-accent hover:underline">Connect Facebook</a> for one-click post analysis · <a href="#walkthrough" class="font-semibold text-accent hover:underline">See the sample report below</a></p>
+        </div>
+      </section>
+
       <!-- Loading state -->
       <div id="loading">
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
@@ -163,13 +189,13 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             </div>
           </div>
           <div class="flex gap-2 mt-4 flex-wrap" role="tablist">
-            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold bg-accent text-white transition" data-tab="paste">Paste comments</button>
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="paste">Paste comments</button>
             <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="csv">Upload CSV</button>
             <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="meta">Facebook / Instagram</button>
-            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold border border-zinc-300 bg-white hover:bg-zinc-50 transition" data-tab="url">Paste a URL</button>
+            <button class="ds-tab h-9 px-4 rounded-lg text-[13px] font-semibold bg-accent text-white transition" data-tab="url">Paste a URL</button>
           </div>
 
-          <div id="ds-panel-paste" class="ds-panel mt-4">
+          <div id="ds-panel-paste" class="ds-panel mt-4 hidden">
             <textarea id="ds-paste-text" rows="5" placeholder="Paste comments here — one comment per line. Copy them from your Facebook Page, Instagram post, or any export."
               class="w-full rounded-lg border border-zinc-300 p-3 text-sm bg-white transition"></textarea>
             <div class="flex items-center gap-3 mt-2.5 flex-wrap">
@@ -208,7 +234,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             </div>
           </div>
 
-          <div id="ds-panel-url" class="ds-panel mt-4 hidden">
+          <div id="ds-panel-url" class="ds-panel mt-4">
             <p class="text-[13px] text-zinc-600 leading-relaxed">Paste a link — comments are fetched and analysed automatically. <strong>Works today:</strong> YouTube videos, Reddit posts. <strong>X (Twitter):</strong> ready, needs the paid X API key. <strong>Facebook / Instagram:</strong> Meta bans URL fetching — use Facebook login instead. <strong>LinkedIn / TikTok:</strong> their APIs are locked to partners — use Paste or CSV.</p>
             <div class="flex items-center gap-3 mt-3 flex-wrap">
               <input id="ds-url-input" type="url" placeholder="https://www.youtube.com/watch?v=… or a Reddit post link" class="h-10 flex-1 min-w-[260px] rounded-lg border border-zinc-300 bg-white text-sm px-3">
@@ -405,6 +431,128 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
         </section>
 
       </div><!-- /app -->
+
+      <!-- Sample walkthrough -->
+      <section id="walkthrough" class="card p-5 sm:p-6 scroll-mt-24 border-indigo-100">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">SEE WHAT YOU GET</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5">The dashboard above is a live sample report</h2>
+        <p class="text-[14px] text-zinc-600 mt-1.5 leading-relaxed max-w-[760px]">It is running on a 148-comment sample set (a fictional pet-grooming business). Every number — topics, sentiment, leads, objections, predictions — is computed from those comments, and every finding shows the original comments behind it. Bring your own comments and the same report is about <strong>your</strong> customers.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+            <div class="text-[12px] font-bold tracking-wide text-zinc-500">BEFORE — SCROLLING RAW COMMENTS</div>
+            <div class="mt-2.5 space-y-2 text-[13.5px] italic text-zinc-600" id="before-quotes"></div>
+          </div>
+          <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+            <div class="text-[12px] font-bold tracking-wide text-indigo-700">AFTER — THE SAME COMMENTS, ORGANISED</div>
+            <div class="mt-2.5 text-[13.5px] text-zinc-700 leading-relaxed" id="after-summary"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- At a glance -->
+      <section id="glance" class="scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">AT A GLANCE</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5 mb-3">CommentPulse in six facts</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">WORKS WITH</div><p class="text-[13.5px] mt-1.5 leading-relaxed">Your Facebook Pages &amp; linked Instagram, any public YouTube or Reddit post, pasted comments, CSV files.</p></div>
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">FOUR WAYS IN</div><p class="text-[13.5px] mt-1.5 leading-relaxed">Page login (one click per post), paste a URL, paste raw comments, upload a CSV. No setup project, no tokens to manage.</p></div>
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">COST</div><p class="text-[13.5px] mt-1.5 leading-relaxed">Free while in beta. Comparable tools charge $5–$49 per credit pack or $7–$199/month (checked November 2026).</p></div>
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">SETUP</div><p class="text-[13.5px] mt-1.5 leading-relaxed">Log in with Facebook or Google. No credit card, no developer account, nothing to install.</p></div>
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">YOU GET</div><p class="text-[13.5px] mt-1.5 leading-relaxed">The gist, topics, repeated questions, sentiment, leads, objections, reply drafts, predictions — plus a printable report and a WhatsApp-ready summary.</p></div>
+          <div class="card p-4"><div class="text-[12px] font-bold tracking-wide text-zinc-500">COMMENT LANGUAGES</div><p class="text-[13.5px] mt-1.5 leading-relaxed">English sentiment plus a Roman-Urdu assist, so "bohat acha" and "bakwas service" are read correctly — a first among tools in this category.</p></div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">HOW IT WORKS</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5 mb-3">Three steps, about a minute</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="card p-5"><div class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-extrabold">1</div><h3 class="font-bold mt-3">Connect or paste</h3><p class="text-[13.5px] text-zinc-600 mt-1 leading-relaxed">Log in with Facebook and pick a post — or paste any public YouTube / Reddit link. Your own comments or a competitor's public video both work.</p></div>
+          <div class="card p-5"><div class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-extrabold">2</div><h3 class="font-bold mt-3">We read every comment</h3><p class="text-[13.5px] text-zinc-600 mt-1 leading-relaxed">Comments are clustered into topics, matched for repetition, scored for sentiment and classified by intent — every figure computed from the comments themselves.</p></div>
+          <div class="card p-5"><div class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center font-extrabold">3</div><h3 class="font-bold mt-3">Act on it</h3><p class="text-[13.5px] text-zinc-600 mt-1 leading-relaxed">Reply to leads first with ready drafts, fix the top objection, and plan the next post around the questions people are about to ask again.</p></div>
+        </div>
+      </section>
+
+      <!-- Who it's for -->
+      <section id="who" class="scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">WHO IT'S FOR</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5 mb-3">Comments are free customer research</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="card p-5"><h3 class="font-bold">Local business owners</h3><p class="text-[15px] font-semibold text-accent mt-1">"What are people asking before they buy?"</p><p class="text-[13.5px] text-zinc-600 mt-1.5 leading-relaxed">See the price and booking questions hiding in your comments, the objections costing you sales, and which commenters are warm leads.</p></div>
+          <div class="card p-5"><h3 class="font-bold">Creators</h3><p class="text-[15px] font-semibold text-accent mt-1">"What should I post next?"</p><p class="text-[13.5px] text-zinc-600 mt-1.5 leading-relaxed">Find the questions your audience keeps asking and the topics gaining ground — including on a competitor's video, before they answer them.</p></div>
+          <div class="card p-5"><h3 class="font-bold">Agencies &amp; freelancers</h3><p class="text-[15px] font-semibold text-accent mt-1">"How did the audience actually react?"</p><p class="text-[13.5px] text-zinc-600 mt-1.5 leading-relaxed">Turn a client's comment section into a report and a WhatsApp summary they can read in one minute — proof of work, not screenshots.</p></div>
+        </div>
+      </section>
+
+      <!-- Comparison -->
+      <section id="compare" class="card p-5 sm:p-6 scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">WHY NOT JUST READ THEM?</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5">Four ways to understand a comment section</h2>
+        <div class="overflow-x-auto mt-3">
+          <table class="w-full text-[13.5px] min-w-[720px]">
+            <thead><tr class="text-left border-b border-zinc-200">
+              <th class="py-2.5 pr-3 font-semibold text-zinc-500"></th>
+              <th class="py-2.5 pr-3 font-semibold">Reading them yourself</th>
+              <th class="py-2.5 pr-3 font-semibold">A general AI chat</th>
+              <th class="py-2.5 pr-3 font-semibold">Listening suites</th>
+              <th class="py-2.5 font-semibold text-accent">CommentPulse</th>
+            </tr></thead>
+            <tbody class="[&_td]:py-2.5 [&_td]:pr-3 [&_tr]:border-b [&_tr]:border-zinc-100 align-top">
+              <tr><td class="font-semibold">Getting the comments</td><td>Scroll by hand</td><td>Copy-paste them yourself</td><td>Keyword projects across the web — not your post's comment section</td><td class="font-medium">Fetched from your Page login or one pasted link</td></tr>
+              <tr><td class="font-semibold">Repeated questions</td><td>The few you remember</td><td>Only if your prompt asks</td><td>Not a named feature</td><td class="font-medium">Counted and quoted, with reply drafts</td></tr>
+              <tr><td class="font-semibold">Buying-intent leads</td><td>Easy to miss</td><td>Sometimes</td><td>Not for your own comments</td><td class="font-medium">Listed separately, ranked to reply first</td></tr>
+              <tr><td class="font-semibold">What's coming next</td><td>Gut feel</td><td>Guesses</td><td>Trend forecasting on mentions, enterprise-priced</td><td class="font-medium">Next likely questions, labelled ESTIMATE with its basis</td></tr>
+              <tr><td class="font-semibold">Sharing the result</td><td>Your notes</td><td>Scroll the chat</td><td>Dashboards &amp; seats</td><td class="font-medium">Printable report + WhatsApp summary, saved history</td></tr>
+              <tr><td class="font-semibold">Price</td><td>Your time</td><td>An AI subscription</td><td>From ~$199/month</td><td class="font-medium">Free while in beta</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">PRICING</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5 mb-3">Start free. Stay honest.</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-6 border-indigo-200" style="background:linear-gradient(180deg,#eef2ff 0%,#ffffff 80%)">
+            <div class="flex items-baseline justify-between"><h3 class="font-extrabold text-[16px]">CommentPulse — Beta</h3><span class="text-[26px] font-extrabold">$0</span></div>
+            <p class="text-[13.5px] text-zinc-600 mt-1.5 leading-relaxed">Everything on this page: unlimited analyses of your own Pages and public links, the full Action Centre, reports, WhatsApp summaries and saved history. No credit card. If paid plans ever launch, they will be announced here first — beta users will not be surprised.</p>
+            <a href="#hero" class="inline-block mt-4 h-10 px-5 leading-10 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-bold transition">Analyse your first post</a>
+          </div>
+          <div class="card p-6">
+            <h3 class="font-extrabold text-[16px]">Done-for-you reports — UpSkillz Solutions</h3>
+            <p class="text-[13.5px] text-zinc-600 mt-1.5 leading-relaxed">Run a business and would rather receive the report than run it? UpSkillz Solutions (the team behind CommentPulse) prepares comment-intelligence reports for local businesses as a service — findings, objections and a content plan, delivered on WhatsApp.</p>
+            <p class="text-[13.5px] mt-3">Write to <a class="font-semibold text-accent hover:underline" href="mailto:digitalmarketingexpert1016@gmail.com">digitalmarketingexpert1016@gmail.com</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="card p-5 sm:p-6 scroll-mt-24">
+        <span class="text-[11.5px] font-bold tracking-widest text-accent">FAQ</span>
+        <h2 class="text-[18px] font-extrabold mt-1.5">Comment analysis, answered</h2>
+        <div class="mt-2 divide-y divide-zinc-100 text-[14px]">
+          <details class="py-3"><summary class="font-semibold cursor-pointer">Which platforms does it work with?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Facebook Pages and linked Instagram accounts through Facebook login; any public YouTube or Reddit post through a pasted link; and any platform at all through paste or CSV. LinkedIn and TikTok offer no public comment API, so for those, paste or CSV is the honest route.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">Is it really free?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Yes — CommentPulse is in beta and fully free, with no credit card. Comparable tools charge $5–$49 per credit pack or $7–$199 per month.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">Can I analyse a competitor's video?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Any public YouTube or Reddit post works — yours or a competitor's. Facebook and Instagram analysis covers Pages you own or manage, because that is Meta's rule for comment access.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">Will it post, reply or change anything on my accounts?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Never. CommentPulse is read-only by design: it fetches comments and analyses them. Reply drafts are text for you to copy — posting them is always your action.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">How accurate is the analysis?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">It is a fast, consistent first read, not a verdict. Sarcasm and missing context can fool any sentiment tool, which is why every finding shows the original comments behind it, and predictions are labelled ESTIMATE with the basis they were computed from.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">What languages does it understand?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Topics and repetition work on any language's text. Sentiment is strongest in English, with a Roman-Urdu assist for the mixed comments common in Pakistan and India.</p></details>
+          <details class="py-3"><summary class="font-semibold cursor-pointer">Where does my data go?</summary><p class="text-zinc-600 mt-1.5 leading-relaxed">Login tokens stay on the server and are never shown in the browser. Analyses you run while logged in are saved to your account history so you can compare over time. See the <a class="text-accent font-semibold hover:underline" href="/privacy">privacy policy</a>.</p></details>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="rounded-2xl p-8 sm:p-10 text-center scroll-mt-24" style="background:linear-gradient(130deg,#4f46e5 0%,#3730a3 60%,#7c3aed 130%)">
+        <h2 class="text-white text-[24px] sm:text-[30px] font-extrabold leading-tight">Your next post is already written in your comments.</h2>
+        <p class="text-indigo-100 text-[14.5px] mt-2">Paste a link or connect your Page — the first report takes about a minute.</p>
+        <a href="#hero" class="inline-flex items-center justify-center mt-5 h-11 px-6 rounded-xl bg-white text-indigo-700 text-[15px] font-extrabold shadow">Analyse free</a>
+      </section>
+
+      <footer class="text-center text-[12.5px] text-zinc-500 pb-2">
+        CommentPulse by <strong>UpSkillz Solutions</strong> · <a class="hover:underline" href="/privacy">Privacy</a> · <a class="hover:underline" href="/terms">Terms</a> · Read-only by design — we never post on your accounts. Not affiliated with Meta, Google or Reddit.
+      </footer>
     </main>
   </div>
 </div>
@@ -636,6 +784,21 @@ function renderActions(a){
   ).join("") : '<p class="text-zinc-500">No repeated question themes to draft replies for yet.</p>';
 }
 
+function renderWalkthrough(a){
+  const bq = document.getElementById("before-quotes");
+  const as = document.getElementById("after-summary");
+  if (!bq || !as) return;
+  const cs = a.comments || [];
+  const picks = cs.filter(c => c.intent === "question" || c.intent === "complaint" || c.intent === "buying_intent").slice(0, 4);
+  bq.innerHTML = (picks.length ? picks : cs.slice(0, 4)).map(c => '<p>“' + esc(c.text) + '”</p>').join("");
+  const act = a.actions || {};
+  const bits = ["<p><strong>" + esc(a.gist.headline) + "</strong></p>"];
+  if ((act.leads || []).length) bits.push("<p class='mt-2'>→ <strong>" + act.leads.length + " warm leads</strong> pulled out of the pile, ranked to reply first.</p>");
+  if ((act.objections || []).length) bits.push("<p class='mt-1'>→ Top objection named: <strong>" + esc(act.objections[0].theme) + "</strong> (" + act.objections[0].count + " comments).</p>");
+  if (a.overlap && a.overlap.length) bits.push("<p class='mt-1'>→ Most repeated ask counted: <strong>" + esc(a.overlap[0].theme) + "</strong> — " + a.overlap[0].count + " times.</p>");
+  as.innerHTML = bits.join("");
+}
+
 /* ---------- full render ---------- */
 function trendHtml(diffPct, invert){
   if (diffPct === null || diffPct === undefined) return '<span class="text-zinc-400">not enough dated data</span>';
@@ -742,6 +905,7 @@ function render(a, label){
   }
   document.getElementById("predictions-body").innerHTML = ph || "<p class='text-zinc-500'>Not enough data for predictions.</p>";
   renderActions(a);
+  renderWalkthrough(a);
 
   /* Method note */
   const m = a.meta;
@@ -1050,6 +1214,23 @@ async function loadHistory(){
     }));
   } catch(e) {}
 }
+document.getElementById("hero-url-btn").addEventListener("click", async () => {
+  const st = document.getElementById("hero-url-status");
+  const url = document.getElementById("hero-url-input").value.trim();
+  if (!url){ st.textContent = "Paste a YouTube or Reddit link first — or connect your Facebook Page below."; return; }
+  st.textContent = "Fetching comments…";
+  try {
+    const r = await readJsonOrError(await fetch("/api/url/analyze", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url }) }));
+    render(r.analysis, r.label);
+    st.textContent = "Done — " + r.fetched + " comments fetched and analysed. Your report is below.";
+    loadHistory();
+    document.getElementById("datasource").scrollIntoView({ behavior: "smooth" });
+  } catch(err){ st.textContent = err.message; }
+});
+document.getElementById("hero-url-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter"){ e.preventDefault(); document.getElementById("hero-url-btn").click(); }
+});
 document.getElementById("ds-url-btn").addEventListener("click", async () => {
   const st = document.getElementById("ds-url-status");
   const url = document.getElementById("ds-url-input").value.trim();
