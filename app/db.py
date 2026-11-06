@@ -206,9 +206,19 @@ def save_analysis(user_id, label, payload: dict) -> str:
 def list_analyses(user_id, limit=20):
     conn = _connect()
     try:
-        rows = _run(conn, "SELECT id, label, created_at FROM analyses WHERE user_id=? ORDER BY created_at DESC",
+        rows = _run(conn, "SELECT id, label, created_at, payload FROM analyses WHERE user_id=? ORDER BY created_at DESC",
                     (user_id,), fetch="all") or []
-        return rows[:limit]
+        out = []
+        for r in rows[:limit]:
+            item = {"id": r["id"], "label": r["label"], "created_at": r["created_at"]}
+            try:
+                meta = (json.loads(r["payload"]) or {}).get("meta") or {}
+                item["total_comments"] = meta.get("total_comments")
+                item["avg_sentiment"] = meta.get("avg_sentiment")
+            except Exception:
+                pass
+            out.append(item)
+        return out
     finally:
         conn.close()
 

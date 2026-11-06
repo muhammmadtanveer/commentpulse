@@ -63,6 +63,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
       <div class="nav-item" data-nav="analytics"><i data-lucide="chart-line" class="w-5 h-5"></i><span class="nav-label">Analytics</span></div>
       <div class="nav-item" data-nav="topics"><i data-lucide="tags" class="w-5 h-5"></i><span class="nav-label">Topics</span></div>
       <div class="nav-item" data-nav="predictions"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="nav-label">Predictions</span></div>
+      <div class="nav-item" data-nav="actions"><i data-lucide="zap" class="w-5 h-5"></i><span class="nav-label">Action centre</span></div>
       <div class="nav-item" data-nav="comments"><i data-lucide="message-square-text" class="w-5 h-5"></i><span class="nav-label">Comments</span></div>
       <div class="nav-item" data-nav="datasource"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-label">Import &amp; Settings</span></div>
       <div class="nav-item" data-nav="help"><i data-lucide="circle-help" class="w-5 h-5"></i><span class="nav-label">Help</span></div>
@@ -213,6 +214,7 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
               <input id="ds-url-input" type="url" placeholder="https://www.youtube.com/watch?v=… or a Reddit post link" class="h-10 flex-1 min-w-[260px] rounded-lg border border-zinc-300 bg-white text-sm px-3">
               <button id="ds-url-btn" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition">Fetch &amp; analyse</button>
               <span id="ds-url-status" class="text-[13px] text-zinc-500"></span>
+              <p class="text-[12.5px] text-zinc-500 w-full">Works on any public YouTube or Reddit post — <strong>yours or a competitor's</strong>. No account connection needed.</p>
             </div>
           </div>
         </section>
@@ -314,6 +316,34 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
         <section id="predictions" class="card p-5 sm:p-6 scroll-mt-24">
           <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-accent"></i> Predictions <span class="est" style="margin-left:0">ESTIMATES — based on the patterns stated</span></h2>
           <div id="predictions-body" class="mt-2 text-[14.5px] leading-relaxed"></div>
+        </section>
+
+        <!-- Action centre -->
+        <section id="actions" class="card p-5 sm:p-6 scroll-mt-24">
+          <h2 class="text-[16px] font-bold flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-accent"></i> Action centre <span class="text-[12px] font-medium text-zinc-500">— what to do with these comments</span></h2>
+          <div id="intent-chips" class="flex flex-wrap gap-2 mt-3"></div>
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+            <div>
+              <h3 class="text-[14px] font-bold flex items-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4 text-emerald-600"></i> Leads in comments</h3>
+              <p class="text-[12.5px] text-zinc-500 mt-0.5">People showing buying intent — prices, booking, ordering. Reply to these first; they are warm.</p>
+              <div id="leads-list" class="mt-2.5 space-y-2 text-[13.5px]"></div>
+            </div>
+            <div>
+              <h3 class="text-[14px] font-bold flex items-center gap-1.5"><i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i> Objections</h3>
+              <p class="text-[12.5px] text-zinc-500 mt-0.5">What's pushing people away, grouped from complaints and negative comments — with their own words.</p>
+              <div id="objections-list" class="mt-2.5 space-y-2.5 text-[13.5px]"></div>
+            </div>
+            <div>
+              <h3 class="text-[14px] font-bold flex items-center gap-1.5"><i data-lucide="list-ordered" class="w-4 h-4 text-accent"></i> Reply first</h3>
+              <p class="text-[12.5px] text-zinc-500 mt-0.5" id="priority-basis">Ranked by intent signals in the text.</p>
+              <div id="priority-list" class="mt-2.5 space-y-2 text-[13.5px]"></div>
+            </div>
+            <div>
+              <h3 class="text-[14px] font-bold flex items-center gap-1.5"><i data-lucide="pen-line" class="w-4 h-4 text-accent"></i> Suggested replies</h3>
+              <p class="text-[12.5px] text-zinc-500 mt-0.5">Ready drafts for your most repeated questions. Fill the [brackets] with your real details, then copy-paste.</p>
+              <div id="drafts-list" class="mt-2.5 space-y-2.5 text-[13.5px]"></div>
+            </div>
+          </div>
         </section>
 
         <!-- Comments table -->
@@ -528,6 +558,10 @@ function buildWhatsAppText(a){
   }
   const rising = (a.predictions.rising_topics || []);
   if (rising.length) lines.push("", "Rising (ESTIMATE): " + rising.slice(0,3).map(r => r.topic + " (+" + r.change_points + " pts)").join(", "));
+  const act = a.actions || {};
+  if ((act.leads || []).length) lines.push("", "Leads in comments: " + act.leads.length + " people showing buying intent.");
+  if ((act.objections || []).length) lines.push("Top objection: " + act.objections[0].theme + " (" + act.objections[0].count + " comments)");
+  if ((act.reply_drafts || []).length) lines.push("", "Reply draft for the most repeated theme (" + act.reply_drafts[0].theme + ", " + act.reply_drafts[0].times_asked + "x):", act.reply_drafts[0].draft);
   return lines.join("\n");
 }
 function buildReportHtml(a){
@@ -551,6 +585,55 @@ function buildReportHtml(a){
     '<h2>Overlap — what keeps repeating</h2>' + overlap +
     '<h2>Predictions</h2>' + (preds.length ? '<ul>' + preds.join("") + '</ul>' : '<p>Not enough data for predictions.</p>') +
     '<p class="sub">Method: ' + esc(m.method) + '. All figures are computed from the comments analysed; predictions are estimates.</p></body></html>';
+}
+
+/* ---------- action centre ---------- */
+let CP_DRAFTS = [];
+function copyDraft(i, btn){
+  const t = CP_DRAFTS[i] || "";
+  navigator.clipboard.writeText(t).then(() => {
+    const old = btn.textContent; btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = old; }, 1800);
+  }).catch(() => { btn.textContent = "Copy blocked"; });
+}
+function renderActions(a){
+  const act = a.actions || {};
+  const chips = document.getElementById("intent-chips");
+  const pretty = { buying_intent: ["Buying intent", "#059669"], question: ["Questions", "#4f46e5"],
+    complaint: ["Complaints", "#dc2626"], praise: ["Praise", "#d97706"], spam: ["Spam", "#71717a"], other: ["Other", "#a1a1aa"] };
+  const ints = act.intents || {};
+  chips.innerHTML = Object.keys(ints).length ? Object.entries(ints).map(([k, v]) => {
+    const p = pretty[k] || [k, "#71717a"];
+    return '<span class="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[12.5px] font-medium"><span class="w-2 h-2 rounded-full" style="background:' + p[1] + '"></span>' + p[0] + ": <strong>" + v.count + "</strong> (" + v.pct + "%)</span>";
+  }).join("") : '<span class="text-[13px] text-zinc-500">Re-run an analysis to fill the Action centre.</span>';
+
+  const leads = act.leads || [];
+  document.getElementById("leads-list").innerHTML = leads.length ? leads.slice(0, 8).map(l =>
+    '<div class="rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2"><span class="italic text-zinc-700">“' + esc(l.text) + '”</span><br><span class="text-[12px] text-zinc-500">' + esc(l.author) + " · " + esc(l.platform) + (l.timestamp ? " · " + esc(String(l.timestamp).slice(0, 10)) : "") + "</span></div>"
+  ).join("") : '<p class="text-zinc-500">No buying-intent comments detected in this set.</p>';
+
+  const objs = act.objections || [];
+  document.getElementById("objections-list").innerHTML = objs.length ? objs.map(o =>
+    '<div class="rounded-lg border border-red-100 bg-red-50/50 px-3 py-2"><strong>' + esc(o.theme) + '</strong> <span class="text-zinc-500">— ' + o.count + " comments (" + o.share_of_negative_pct + '% of negative)</span>' +
+    o.examples.map(e => '<p class="italic text-zinc-600 mt-0.5">“' + esc(e) + '”</p>').join("") + "</div>"
+  ).join("") : '<p class="text-zinc-500">No objections detected — no complaint themes in the negative comments.</p>';
+
+  const prio = act.priority || [];
+  if (act.priority_basis) document.getElementById("priority-basis").textContent = act.priority_basis;
+  document.getElementById("priority-list").innerHTML = prio.length ? "<ol class='space-y-2'>" + prio.map(x =>
+    '<li class="rounded-lg border border-zinc-200 px-3 py-2"><span class="italic text-zinc-700">“' + esc(x.text) + '”</span><br>' +
+    x.reasons.map(r => '<span class="inline-block rounded bg-indigo-50 text-indigo-700 text-[11px] font-semibold px-1.5 py-0.5 mr-1 mt-1">' + esc(r) + "</span>").join("") +
+    '<span class="text-[12px] text-zinc-500 ml-1">' + esc(x.author) + " · " + esc(x.platform) + "</span></li>"
+  ).join("") + "</ol>" : '<p class="text-zinc-500">Nothing urgent detected.</p>';
+
+  const drafts = act.reply_drafts || [];
+  CP_DRAFTS = drafts.map(d => d.draft);
+  document.getElementById("drafts-list").innerHTML = drafts.length ? drafts.map((d, i) =>
+    '<div class="rounded-lg border border-zinc-200 px-3 py-2"><div class="flex items-center justify-between gap-2"><strong>' + esc(d.theme) + '</strong><span class="text-zinc-500 text-[12px]">asked ' + d.times_asked + 'x</span></div>' +
+    '<p class="italic text-zinc-500 mt-0.5">“' + esc(d.representative) + '”</p>' +
+    '<p class="mt-1 text-zinc-800">' + esc(d.draft) + '</p>' +
+    '<button onclick="copyDraft(' + i + ', this)" class="mt-1.5 h-7 px-2.5 rounded-md border border-zinc-300 text-[12px] font-semibold hover:bg-zinc-50">Copy draft</button></div>'
+  ).join("") : '<p class="text-zinc-500">No repeated question themes to draft replies for yet.</p>';
 }
 
 /* ---------- full render ---------- */
@@ -653,7 +736,12 @@ function render(a, label){
     ph += "<p class='mt-3'><strong>Content ideas</strong><span class='est'>ESTIMATE</span></p><ul class='list-disc pl-5 mt-1 space-y-1'>" +
       p.content_ideas.map(c => "<li>" + esc(c.idea) + "</li>").join("") + "</ul>";
   }
+  if (p.based_on) {
+    ph += "<p class='mt-3 text-[12.5px] text-zinc-500'>" + esc(p.based_on.note) + " Based on " +
+      p.based_on.comments + " comments (" + p.based_on.dated_comments + " dated).</p>";
+  }
   document.getElementById("predictions-body").innerHTML = ph || "<p class='text-zinc-500'>Not enough data for predictions.</p>";
+  renderActions(a);
 
   /* Method note */
   const m = a.meta;
@@ -935,10 +1023,20 @@ async function loadHistory(){
     const body = await readJsonOrError(await fetch("/api/analyses"));
     if (!body.analyses.length){ box.innerHTML = '<span class="text-zinc-500 text-[13px]">Nothing saved yet — analyses you run while logged in are saved here.</span>'; return; }
     box.innerHTML = "";
-    body.analyses.forEach(a => {
+    const baseLabel = l => String(l || "").replace(/ \(\d+ comments\)$/, "");
+    body.analyses.forEach((a, idx) => {
       const d = document.createElement("div");
       d.className = "flex items-center justify-between gap-3";
-      d.innerHTML = '<span class="truncate">' + esc(a.label) + '</span>' +
+      let delta = "";
+      const prev = body.analyses.slice(idx + 1).find(x => baseLabel(x.label) === baseLabel(a.label));
+      if (prev && typeof a.avg_sentiment === "number" && typeof prev.avg_sentiment === "number") {
+        const ds = Math.round((a.avg_sentiment - prev.avg_sentiment) * 1000) / 1000;
+        const dc = (a.total_comments || 0) - (prev.total_comments || 0);
+        const arrow = ds > 0.005 ? "▲" : ds < -0.005 ? "▼" : "■";
+        const cls = ds > 0.005 ? "text-emerald-600" : ds < -0.005 ? "text-red-500" : "text-zinc-400";
+        delta = '<span class="' + cls + ' text-[12px] shrink-0" title="Change vs your previous analysis of this source">' + arrow + " sentiment " + (ds > 0 ? "+" : "") + ds + " · comments " + (dc > 0 ? "+" : "") + dc + "</span>";
+      }
+      d.innerHTML = '<span class="truncate">' + esc(a.label) + '</span>' + delta +
         '<span class="text-zinc-400 text-[12px] shrink-0">' + new Date(a.created_at * 1000).toLocaleDateString() + '</span>' +
         '<button class="h-7 px-2.5 shrink-0 rounded-md border border-zinc-300 text-[12px] font-semibold" data-load="' + a.id + '">Open</button>';
       box.appendChild(d);

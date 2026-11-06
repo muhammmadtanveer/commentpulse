@@ -222,6 +222,21 @@ def demo_whatsapp():
         lines.append("")
         lines.append("Rising (ESTIMATE): " + ", ".join(
             f"{r['topic']} (+{r['change_points']} pts)" for r in rising[:3]))
+    act = a.get("actions") or {}
+    leads = act.get("leads") or []
+    if leads:
+        lines.append("")
+        lines.append(f"Leads in comments: {len(leads)} people showing buying intent.")
+    objs = act.get("objections") or []
+    if objs:
+        o0 = objs[0]
+        lines.append(f"Top objection: {o0['theme']} ({o0['count']} comments).")
+    drafts = act.get("reply_drafts") or []
+    if drafts:
+        d0 = drafts[0]
+        lines.append("")
+        lines.append(f"Reply draft for the most repeated theme ({d0['theme']}, {d0['times_asked']}x):")
+        lines.append(d0["draft"])
     return "\n".join(lines)
 
 
@@ -343,6 +358,43 @@ def render_report(a, title):
         pred_parts.append(f"<p><strong>Content ideas</strong> <span class='est'>ESTIMATE</span></p><ul>{items}</ul>")
     predictions_html = "".join(pred_parts) or "<p>Not enough data for predictions.</p>"
 
+    act = a.get("actions") or {}
+    act_parts = []
+    intents = act.get("intents") or {}
+    if intents:
+        pretty = {"buying_intent": "Buying intent", "question": "Questions",
+                  "complaint": "Complaints", "praise": "Praise",
+                  "spam": "Spam / self-promo", "other": "Other"}
+        act_parts.append("<p>" + " · ".join(
+            f"{pretty.get(k, k)}: {v['count']} ({v['pct']}%)" for k, v in intents.items()) + "</p>")
+    leads = act.get("leads") or []
+    if leads:
+        items = "".join(
+            f"<li>&ldquo;{_esc(l['text'])}&rdquo; — {_esc(l['author'])}</li>" for l in leads[:10])
+        act_parts.append(f"<p><strong>Leads in comments ({len(leads)})</strong> — buying intent detected:</p><ul>{items}</ul>")
+    objs = act.get("objections") or []
+    if objs:
+        items = "".join(
+            f"<li><strong>{_esc(o['theme'])}</strong> — {o['count']} comments "
+            f"({o['share_of_negative_pct']}% of negative)"
+            + "".join(f"<br><span class='ex'>&ldquo;{_esc(e)}&rdquo;</span>" for e in o["examples"])
+            + "</li>"
+            for o in objs)
+        act_parts.append(f"<p><strong>Objections</strong></p><ul>{items}</ul>")
+    prio = act.get("priority") or []
+    if prio:
+        items = "".join(
+            f"<li>&ldquo;{_esc(x['text'])}&rdquo; — {_esc(', '.join(x['reasons']))}</li>"
+            for x in prio[:5])
+        act_parts.append(f"<p><strong>Reply first</strong> (ranked by intent signals)</p><ul>{items}</ul>")
+    drafts = act.get("reply_drafts") or []
+    if drafts:
+        items = "".join(
+            f"<li><strong>{_esc(d['theme'])}</strong> ({d['times_asked']}x): {_esc(d['draft'])}</li>"
+            for d in drafts)
+        act_parts.append(f"<p><strong>Suggested reply drafts</strong> — fill the [brackets] with your real details before posting</p><ul>{items}</ul>")
+    actions_html = "".join(act_parts) or "<p>No action items detected.</p>"
+
     date_line = ""
     if m.get("date_range"):
         date_line = f"Comments from {_esc(m['date_range']['from'])} to {_esc(m['date_range']['to'])}. "
@@ -386,6 +438,9 @@ def render_report(a, title):
 
 <h2>Predictions</h2>
 {predictions_html}
+
+<h2>Action centre</h2>
+{actions_html}
 
 <p class="sub">Method: {_esc(m['method'])}. All figures are computed from the comments analysed; predictions are estimates based on the patterns stated.</p>
 </body></html>"""

@@ -69,6 +69,87 @@ QUESTION_STARTERS = (
     "price", "prices", "want", "need", "looking", "any",
 )
 
+# --- Competitive-upgrade lexicons (all rules are transparent keyword sets) ---
+
+# Roman Urdu / Urdu sentiment assist: VADER is English-only, so common
+# Roman-Urdu praise/complaint phrases adjust the compound score by a bounded
+# amount. Every hit is visible in the words themselves; nothing is inferred.
+URDU_POSITIVE = [
+    "bohat acha", "bohat achha", "boht acha", "bohut acha", "acha hai",
+    "bohat acha hai", "zabardast", "behtareen", "behtreen", "mashallah",
+    "masha allah", "khubsurat", "shukriya", "bohat shukriya", "pasand aya",
+    "pasand aaya", "bohat pyara", "kamaal", "kamal", "aala", "alaa",
+    "khush hua", "dil khush", "maza aya", "maza aaya",
+]
+URDU_NEGATIVE = [
+    "bohat bura", "boht bura", "bohut bura", "bura hai", "bakwas",
+    "bekar", "ghatiya", "fazool", "faltu", "kharab", "dhoka", "dhokha",
+    "loot liya", "loot raha", "naraz", "shikayat", "ganda", "bura laga",
+    "pasand nahi", "acha nahi", "achha nahi", "mehnga bohat", "bohat mehnga",
+]
+URDU_SINGLE_POS = {"acha", "achha", "zabardast", "behtareen", "shukriya", "khubsurat"}
+URDU_SINGLE_NEG = {"bakwas", "bekar", "ghatiya", "fazool", "kharab", "dhoka"}
+
+# Buying-intent: commercial keywords + a question form or a strong verb.
+BUY_KEYWORDS = [
+    "price", "prices", "cost", "much", "rate", "rates", "charge", "charges",
+    "order", "buy", "book", "booking", "appointment", "available",
+    "delivery", "dm", "inbox", "contact", "whatsapp", "discount", "offer",
+    "quote", "charges", "fees",
+]
+BUY_STRONG = [
+    "want to", "i want", "need this", "i need", "order karna", "book karna",
+    "interested", "book me", "sign me up", "how to order", "how can i order",
+    "lena hai", "chahiye", "buy karna",
+]
+QUESTION_HINTS = [
+    "anyone know", "does anyone", "can anyone", "is there", "do you",
+    "kya", "kia", "kb", "kab", "kahan", "kaise", "kitne", "kitna",
+]
+
+# Objection sub-themes, checked in order against complaint/negative comments.
+OBJECTION_THEMES = [
+    ("Price & value", ["expensive", "overpriced", "too much", "steep", "costly",
+                        "pricey", "rip off", "ripoff", "loot", "mehnga"]),
+    ("Slow response / waiting", ["no reply", "not replying", "no response",
+                                  "ignored", "waiting", "waited", "slow reply",
+                                  "reply nahi", "jawab nahi", "late reply"]),
+    ("Service quality", ["rude", "unprofessional", "bad service", "poor service",
+                          "worst service", "pathetic", "bakwas service",
+                          "staff behaviour", "staff behavior"]),
+    ("Work quality", ["uneven", "nicked", "ruined", "damaged", "bad job",
+                       "poor quality", "kharab kar", "ghatiya kaam"]),
+    ("Trust concerns", ["scam", "fraud", "fake", "cheat", "dhoka", "dhokha",
+                         "fraud hai", "scam hai"]),
+]
+
+# Reply-draft templates per repeated-theme label. Bracketed parts are
+# placeholders the owner fills with their REAL details — drafts never invent
+# prices, hours or policies.
+REPLY_DRAFT_TEMPLATES = [
+    ("Price questions",
+     "Hi! Thanks for asking about prices. [Add your price or starting range here] "
+     "— send us a DM and we'll confirm the exact quote for you."),
+    ("Booking & appointments",
+     "Hi! We'd love to book you in. [Add your booking link or next available days here] "
+     "— or DM us and we'll reserve your slot."),
+    ("Hours & location",
+     "Hi! Our hours are [add your opening hours here] and we're at "
+     "[add your location here]. See you soon!"),
+    ("Delivery & pickup",
+     "Hi! [Add your delivery areas and charges here]. DM us your location "
+     "and we'll confirm right away."),
+    ("Complaints",
+     "Hi, we're really sorry about this. [Add one line on how you fix it / your "
+     "policy here] — please DM us so we can make it right."),
+]
+REPLY_DRAFT_GENERIC = (
+    "Great question! [Add your answer here] — and feel free to DM us if you "
+    "need anything else."
+)
+REPLY_DRAFT_NOTE = ("Draft only — fill the [brackets] with your real details "
+                    "before posting.")
+
 # Intent labels checked in priority order for overlap groups: subject words
 # ("groom", "bath") appear in almost every comment for a grooming business,
 # so intent is judged by how many of the group's comments carry the label's
@@ -175,6 +256,8 @@ def analyze(comments):
             "gist": {"headline": "No comments to analyse.", "bullets": [], "text": "No comments to analyse."},
             "predictions": {"rising_topics": [], "likely_questions": [],
                             "sentiment_direction": None, "content_ideas": []},
+            "actions": {"intents": {}, "leads": [], "objections": [],
+                        "priority": [], "reply_drafts": []},
         }
 
     originals = [str(c["text"]).strip() for c in raw]
@@ -182,9 +265,11 @@ def analyze(comments):
     platforms = Counter(str(c.get("platform") or "unknown").lower() for c in raw)
     timestamps = [_parse_ts(c.get("timestamp")) for c in raw]
 
-    # ---- Sentiment (VADER) ----
+    # ---- Sentiment (VADER + Roman-Urdu lexicon assist) ----
     analyzer = SentimentIntensityAnalyzer()
-    compounds = [analyzer.polarity_scores(t)["compound"] for t in cleaned]
+    compounds = [
+        _urdu_assist(t, analyzer.polarity_scores(t)["compound"]) for t in cleaned
+    ]
     buckets = Counter(_sentiment_bucket(s) for s in compounds)
     avg_sentiment = round(float(np.mean(compounds)), 3) if compounds else 0.0
 
@@ -331,6 +416,18 @@ def analyze(comments):
     # ---- Predictions ----
     predictions = _build_predictions(topics, overlap, timestamps, cluster_of,
                                      compounds, originals)
+    predictions["based_on"] = {
+        "comments": total,
+        "dated_comments": sum(1 for t in timestamps if t is not None),
+        "note": ("ESTIMATE — computed only from the comments in this analysis; "
+                 "larger samples give steadier estimates."),
+    }
+
+    # ---- Intents + Action Centre (leads, objections, priority, drafts) ----
+    intents = [
+        _classify_intent(cleaned[i], originals[i], compounds[i]) for i in range(total)
+    ]
+    actions = _build_actions(intents, originals, raw, timestamps, compounds, overlap)
 
     valid_ts = [t for t in timestamps if t is not None]
     date_range = None
@@ -357,6 +454,7 @@ def analyze(comments):
             "sentiment": _sentiment_bucket(compounds[i]),
             "sentiment_score": round(float(compounds[i]), 3),
             "topic": topic_label_by_id.get(cluster_of[i], "General comments"),
+            "intent": intents[i],
         })
 
     return {
@@ -366,13 +464,15 @@ def analyze(comments):
             "date_range": date_range,
             "avg_sentiment": avg_sentiment,
             "sample_note": sample_note,
-            "method": "TF-IDF + KMeans clustering, TF-IDF cosine overlap, VADER sentiment",
+            "method": ("TF-IDF + KMeans clustering, TF-IDF cosine overlap, VADER "
+                       "sentiment with Roman-Urdu lexicon assist, rule-based intent"),
         },
         "sentiment": _split_sentiment(buckets, total),
         "topics": topics,
         "overlap": overlap,
         "gist": gist,
         "predictions": predictions,
+        "actions": actions,
         "comments": comments_out,
     }
 
@@ -519,3 +619,192 @@ def _build_predictions(topics, overlap, timestamps, cluster_of, compounds, origi
         })
 
     return preds
+
+
+def _urdu_assist(text: str, compound: float) -> float:
+    """Bounded Roman-Urdu/Urdu lexicon adjustment to a VADER compound score.
+
+    Phrase hits move the score by 0.3 each (bounded to ±0.6 total), single
+    strong words by 0.2. Result is clamped to [-1, 1]. English-only comments
+    are untouched unless they contain one of the listed words.
+    """
+    low = " " + (text or "").lower() + " "
+    delta = 0.0
+    for phrase in URDU_POSITIVE:
+        if phrase in low:
+            delta += 0.3
+    for phrase in URDU_NEGATIVE:
+        if phrase in low:
+            delta -= 0.3
+    tokens = set(re.findall(r"[a-z']+", low))
+    for w in URDU_SINGLE_POS & tokens:
+        delta += 0.2
+    for w in URDU_SINGLE_NEG & tokens:
+        delta -= 0.2
+    delta = max(-0.6, min(0.6, delta))
+    return max(-1.0, min(1.0, compound + delta))
+
+
+def _is_question(original: str, low: str) -> bool:
+    if "?" in original:
+        return True
+    stripped = low.strip()
+    if any(stripped.startswith(s + " ") or stripped == s for s in QUESTION_STARTERS):
+        return True
+    return any(h in low for h in QUESTION_HINTS)
+
+
+def _has_any(low: str, phrases) -> bool:
+    return any(p in low for p in phrases)
+
+
+def _has_word(low: str, words) -> bool:
+    return any(re.search(r"\b" + re.escape(w) + r"\b", low) for w in words)
+
+
+def _classify_intent(cleaned: str, original: str, compound: float) -> str:
+    """One intent per comment, checked in a fixed priority order."""
+    low = cleaned.lower()
+    bucket = _sentiment_bucket(compound)
+    if _has_word(low, LABEL_KEYWORDS["Spam / self-promo"]):
+        return "spam"
+    question = _is_question(original, low)
+    if _has_word(low, BUY_KEYWORDS) and (question or _has_any(low, BUY_STRONG)):
+        return "buying_intent"
+    if _has_any(low, BUY_STRONG):
+        return "buying_intent"
+    complaint_hit = _has_word(low, LABEL_KEYWORDS["Complaints"])
+    if bucket == "negative" and (complaint_hit or compound <= -0.45):
+        return "complaint"
+    if question:
+        return "question"
+    if bucket == "positive" and (_has_word(low, LABEL_KEYWORDS["Praise & love"])
+                                  or compound >= 0.6):
+        return "praise"
+    return "other"
+
+
+def _build_actions(intents, originals, raw, timestamps, compounds, overlap):
+    total = len(originals)
+    counts = Counter(intents)
+    intent_summary = {
+        name: {"count": counts.get(name, 0), "pct": _pct(counts.get(name, 0), total)}
+        for name in ("buying_intent", "question", "complaint", "praise", "spam", "other")
+        if counts.get(name, 0) > 0
+    }
+
+    def row(i):
+        ts = timestamps[i]
+        return {
+            "id": i + 1,
+            "author": raw[i].get("author") or "unknown",
+            "platform": str(raw[i].get("platform") or "unknown").lower(),
+            "text": originals[i],
+            "timestamp": ts.isoformat() if ts is not None else raw[i].get("timestamp"),
+        }
+
+    # Leads: buying-intent comments, newest first when dates exist.
+    lead_idx = [i for i in range(total) if intents[i] == "buying_intent"]
+    lead_idx.sort(key=lambda i: (timestamps[i] is not None, timestamps[i]),
+                  reverse=True)
+    leads = [row(i) for i in lead_idx[:20]]
+
+    # Objections: complaint-intent + remaining negative comments grouped by
+    # sub-theme keywords; examples are real comments from the group.
+    neg_idx = [i for i in range(total)
+               if intents[i] == "complaint" or _sentiment_bucket(compounds[i]) == "negative"]
+    neg_total = max(1, len(neg_idx))
+    groups = {}
+    for i in neg_idx:
+        low = clean_text(originals[i]).lower()
+        theme = "General complaints"
+        for name, kws in OBJECTION_THEMES:
+            if _has_any(low, kws):
+                theme = name
+                break
+        groups.setdefault(theme, []).append(i)
+    objections = []
+    for theme, members in groups.items():
+        members_sorted = sorted(members, key=lambda i: compounds[i])
+        objections.append({
+            "theme": theme,
+            "count": len(members),
+            "share_of_negative_pct": _pct(len(members), neg_total),
+            "examples": [originals[i] for i in members_sorted[:2]],
+        })
+    objections.sort(key=lambda o: -o["count"])
+    objections = objections[:6]
+
+    # Priority reply queue: rule-scored; reasons shown so the ranking is
+    # auditable. This ranks by intent signals, NOT by whether the business
+    # already replied (reply status is not in the comment data).
+    dated_sorted = sorted([t for t in timestamps if t is not None])
+    recent_cutoff = dated_sorted[int(len(dated_sorted) * 0.75)] if len(dated_sorted) >= 8 else None
+    scored = []
+    for i in range(total):
+        if intents[i] == "spam":
+            continue
+        score, reasons = 0, []
+        if intents[i] == "buying_intent":
+            score += 3
+            reasons.append("Buying intent — possible customer")
+        if intents[i] == "complaint":
+            score += 3
+            reasons.append("Complaint — needs a response")
+        if intents[i] == "question" or (intents[i] == "buying_intent" and "?" in originals[i]):
+            if intents[i] != "buying_intent":
+                score += 2
+                reasons.append("Question")
+        if _sentiment_bucket(compounds[i]) == "negative" and intents[i] != "complaint":
+            score += 1
+            reasons.append("Negative tone")
+        if recent_cutoff is not None and timestamps[i] is not None and timestamps[i] >= recent_cutoff:
+            score += 1
+            reasons.append("Recent")
+        if score >= 3 and reasons:
+            r = row(i)
+            r["score"] = score
+            r["reasons"] = reasons
+            r["sentiment"] = _sentiment_bucket(compounds[i])
+            scored.append(r)
+    def _epoch(r):
+        ts = _parse_ts(r.get("timestamp"))
+        return ts.timestamp() if ts is not None else 0.0
+    scored.sort(key=lambda r: (-r["score"], -_epoch(r)))
+    priority = scored[:10]
+
+    # Suggested reply drafts for the most-repeated question themes.
+    drafts = []
+    for group in overlap:
+        theme = group["theme"]
+        rep = group["representative"].strip()
+        is_q = rep.endswith("?") or rep.lower().startswith(QUESTION_STARTERS)
+        template = None
+        for prefix, tpl in REPLY_DRAFT_TEMPLATES:
+            if theme.startswith(prefix):
+                template = tpl
+                break
+        if template is None and is_q:
+            template = REPLY_DRAFT_GENERIC
+        if template is None:
+            continue
+        drafts.append({
+            "theme": theme,
+            "times_asked": group["count"],
+            "representative": rep,
+            "draft": template,
+            "note": REPLY_DRAFT_NOTE,
+        })
+        if len(drafts) >= 4:
+            break
+
+    return {
+        "intents": intent_summary,
+        "leads": leads,
+        "objections": objections,
+        "priority": priority,
+        "reply_drafts": drafts,
+        "priority_basis": ("Ranked by intent signals in the comment text "
+                           "(buying intent, complaint, question, negative tone, "
+                           "recency). Reply status is not tracked."),
+    }
