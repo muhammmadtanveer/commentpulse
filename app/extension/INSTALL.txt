@@ -1,0 +1,13 @@
+CommentPulse Grabber — Chrome extension (one-time setup, ~2 minutes)
+
+1. Unzip this folder somewhere you will keep it (e.g. Documents).
+2. In Chrome, open:  chrome://extensions
+3. Turn ON "Developer mode" (top-right switch).
+4. Click "Load unpacked" and select this folder.
+5. Click the puzzle-piece icon in Chrome's toolbar and pin "CommentPulse Grabber".
+
+To use: open any Facebook / Instagram / TikTok / LinkedIn / Pinterest post,
+scroll so comments load, click the Grabber icon, then "Grab comments from
+this page". A file downloads — upload it in CommentPulse (Upload CSV tab).
+
+It never asks for your password and never sends anything anywhere.

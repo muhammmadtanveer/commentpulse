@@ -263,6 +263,13 @@ tailwind.config = { theme: { extend: { colors: { accent: { DEFAULT:'#4f46e5', da
             <li class="border border-zinc-200 rounded-lg p-3 bg-zinc-50/60"><span class="step-n">3</span><span class="font-semibold">Upload the file.</span> Use the <strong>Upload CSV</strong> tab above — the full analysis (topics, leads, predictions, reply queue) runs instantly on it.</li>
           </ol>
           <p class="text-[12.5px] text-zinc-500 mt-3">Honest limits: the Grabber captures the comments <em>loaded on the page</em> — scroll and expand first to get more. It never asks for your password and never posts or replies for you.</p>
+          <div class="mt-4 border border-emerald-200 bg-emerald-50/70 rounded-lg p-3.5 flex flex-wrap items-center gap-3">
+            <div class="flex-1 min-w-[240px]">
+              <div class="text-[13.5px] font-bold">Easier: the Chrome extension — one click, forever</div>
+              <p class="text-[12.5px] text-zinc-600 leading-relaxed mt-0.5">One-time setup (~2 min): download → unzip → open <code class="bg-white px-1 rounded">chrome://extensions</code> → turn on <strong>Developer mode</strong> → <strong>Load unpacked</strong> → pick the folder → pin the icon. After that, grabbing comments is a single click on the toolbar icon — no bookmarks at all. Full steps are inside the download (INSTALL.txt).</p>
+            </div>
+            <a href="/grabber-extension.zip" class="h-10 px-4 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold flex items-center gap-2 transition shrink-0"><i data-lucide="download" class="w-4 h-4"></i>Download extension</a>
+          </div>
           <details class="mt-2">
             <summary class="text-[13px] font-semibold text-zinc-600 cursor-pointer">Drag didn't work? Copy the Grabber code instead</summary>
             <p class="text-[12.5px] text-zinc-500 mt-1.5">Create a new bookmark manually, name it “CommentPulse Grabber”, and paste this as its URL:</p>

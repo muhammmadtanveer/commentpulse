@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, File, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel
 
 from app.analyze import analyze
@@ -99,6 +99,29 @@ def import_text(payload: TextImport):
         return JSONResponse(status_code=400, content={
             "error": "No comments found. Paste at least one comment (one per line) and try again."})
     return analyze(comments[:MAX_COMMENTS])
+
+
+@app.get("/grabber-extension.zip")
+def grabber_extension():
+    """Download the CommentPulse Grabber Chrome extension (zipped on the fly
+    from app/extension/)."""
+    import base64
+    import zipfile
+    ext_dir = BASE_DIR / "app" / "extension"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in sorted(ext_dir.iterdir()):
+            if not f.is_file():
+                continue
+            if f.name == "icon.png.b64":
+                # Icon ships base64-encoded in the repo (push tooling is
+                # text-only); decode it into a real PNG inside the zip.
+                z.writestr("commentpulse-grabber/icon.png",
+                           base64.b64decode(f.read_text(encoding="utf-8")))
+            else:
+                z.write(f, arcname=f"commentpulse-grabber/{f.name}")
+    return Response(buf.getvalue(), media_type="application/zip", headers={
+        "Content-Disposition": "attachment; filename=commentpulse-grabber-extension.zip"})
 
 
 @app.get("/api/sample-csv")
