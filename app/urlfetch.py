@@ -50,27 +50,34 @@ def detect(url: str):
     if "facebook.com" in u or "fb.watch" in u:
         raise UrlError(
             "Meta does not allow fetching Facebook comments from a public URL — "
-            "no tool can legally scrape them. Log in with Facebook above and pick "
-            "the post from your Page instead: one click, same result.", 422)
+            "no tool can legally scrape them. Two working routes: (1) log in with "
+            "Facebook above and pick the post from your Page, or (2) use the "
+            "Link Grabber below — it turns the comments on the open post page "
+            "into a file in your browser, which you upload here.", 422)
     if "instagram.com" in u:
         raise UrlError(
             "Meta does not allow fetching Instagram comments from a public URL. "
-            "Log in with Facebook above (your Instagram must be linked to your "
-            "Page) and pick the post there.", 422)
+            "Two working routes: (1) log in with Facebook above (Instagram "
+            "linked to your Page) and pick the post there, or (2) use the Link "
+            "Grabber below — it turns the comments on the open post page into a "
+            "file in your browser, which you upload here.", 422)
     if "linkedin.com" in u:
         raise UrlError(
             "LinkedIn locks comment access behind a partner programme — there is "
-            "no public API for it, for any tool. Use Paste comments or CSV for "
-            "LinkedIn threads for now.", 422)
+            "no public API for it, for any tool. Use the Link Grabber below: it "
+            "turns the comments on the open post page into a file in your "
+            "browser, which you upload here.", 422)
     if "tiktok.com" in u:
         raise UrlError(
             "TikTok's comment API is restricted to approved research accounts. "
-            "Use Paste comments or CSV for TikTok threads for now.", 422)
+            "Use the Link Grabber below: it turns the comments on the open post "
+            "page into a file in your browser, which you upload here.", 422)
     if "pinterest.com" in u or "pin.it" in u:
         raise UrlError(
             "Pinterest does not expose pin comments to any third-party tool — "
-            "there is no public comment API for it. Use Paste comments or CSV "
-            "for Pinterest threads for now.", 422)
+            "there is no public comment API for it. Use the Link Grabber below: "
+            "it turns the comments on the open post page into a file in your "
+            "browser, which you upload here.", 422)
     raise UrlError("I could not recognise that URL. Supported today: YouTube, "
                    "Reddit, and X links — plus Facebook/Instagram via login.")
 
