@@ -66,6 +66,11 @@ def detect(url: str):
         raise UrlError(
             "TikTok's comment API is restricted to approved research accounts. "
             "Use Paste comments or CSV for TikTok threads for now.", 422)
+    if "pinterest.com" in u or "pin.it" in u:
+        raise UrlError(
+            "Pinterest does not expose pin comments to any third-party tool — "
+            "there is no public comment API for it. Use Paste comments or CSV "
+            "for Pinterest threads for now.", 422)
     raise UrlError("I could not recognise that URL. Supported today: YouTube, "
                    "Reddit, and X links — plus Facebook/Instagram via login.")
 
@@ -159,6 +164,12 @@ def fetch_reddit(post_id: str) -> list:
             resp.raise_for_status()
             data = resp.json()
     except Exception as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        if status in (401, 403):
+            raise UrlError(
+                "Reddit blocks anonymous requests from servers, so by-link "
+                "fetching needs the site owner's free Reddit app credentials "
+                "(a one-time setup). Paste/CSV work today.", 503)
         raise UrlError(f"Reddit did not return the comments ({exc.__class__.__name__}). "
                        "Check the link is a public post, or use Paste/CSV.", 502)
     out: list = []

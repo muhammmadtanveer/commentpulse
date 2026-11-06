@@ -1092,15 +1092,9 @@ async function initAuth(){
       return;
     }
     window.CP_USER = me.user;
-    const initials = esc((me.user.name || "U").split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase());
-    area.innerHTML =
-      (me.user.avatar ? '<img src="' + esc(me.user.avatar) + '" class="w-8 h-8 rounded-full" alt="">' :
-        '<span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[12px] font-bold">' + initials + '</span>') +
-      '<span class="hidden md:block text-[13px] font-semibold max-w-[140px] truncate">' + esc(me.user.name || "") + '</span>' +
-      '<button id="logout-btn" class="h-9 px-3 rounded-lg border border-zinc-300 bg-white text-[13px] font-semibold hover:bg-zinc-50 transition">Log out</button>';
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await fetch("/auth/logout", { method: "POST" }); location.reload();
-    });
+    /* Logged in: the profile menu (right) already shows identity + Log out —
+       keep this area empty so the header never shows the user twice. */
+    area.innerHTML = "";
     sec.classList.remove("hidden");
     if (me.facebook_connected){
       document.getElementById("accounts-body").classList.remove("hidden");
